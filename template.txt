@@ -1,0 +1,43 @@
+
+========================
+TEST SUMMARY
+========================
+| Metric                | Value                          |
+|----------------------|--------------------------------|
+| Load                 | <total_users> users (<tps>)    |
+| Total TPS (Actual)   | <actual_tps>                   |
+| Test Duration        | <start - end (duration)>       |
+| Ramp-up Time         | <ramp_time>                    |
+| Status               | <PASS/FAIL>                    |
+
+========================
+ENVIRONMENT DETAILS
+========================
+| Component            | Details                        |
+|----------------------|--------------------------------|
+| Load Generators      | <count>                        |
+| Mock Servers         | <count>                        |
+| Application Pods     | <count + CPU + Memory>         |
+| Heap Size            | <value>                        |
+| Config Services      | <count/details>                |
+| Caching              | <enabled/disabled>             |
+
+========================
+API PERFORMANCE METRICS
+========================
+| Type | API Name | Requests | Fails | Avg(ms) | Min(ms) | Max(ms) | RPS  | Failures/s | P90(ms) | P95(ms) |
+|------|----------|----------|-------|---------|---------|---------|------|------------|---------|---------|
+| <T>  | <Name>   | <Req>    | <F>   | <Avg>   | <Min>   | <Max>   | <RPS>| <Fail/s>   | <P90>   | <P95>   |
+| <T>  | <Name>   | <Req>    | <F>   | <Avg>   | <Min>   | <Max>   | <RPS>| <Fail/s>   | <P90>   | <P95>   |
+| ...  | ...      | ...      | ...   | ...     | ...     | ...     | ...  | ...        | ...     | ...     |
+
+========================
+ANALYSIS REQUIRED
+========================
+1. Identify bottlenecks (high latency, spikes, P95 issues)
+2. Detect unstable APIs under load
+3. Correlate RPS vs latency behavior
+4. Highlight risks despite PASS status
+5. Suggest performance improvements
+6. Identify scaling/architecture issues
+7. Highlight anomalies

@@ -1,0 +1,31 @@
+# Configuration files with credentials
+config.json
+credentials.json
+
+# Exported dashboard files (may contain sensitive data)
+*.json
+!package.json
+
+# Node modules
+node_modules/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
