@@ -436,19 +436,6 @@ if (testStatus === 'FAIL') {
       }
     },
     
-    // Freeze header row
-    {
-      updateSheetProperties: {
-        properties: {
-          sheetId,
-          gridProperties: {
-            frozenRowCount: headerRow + 1
-          }
-        },
-        fields: 'gridProperties.frozenRowCount'
-      }
-    },
-    
     // Auto resize columns
     {
       autoResizeDimensions: {
