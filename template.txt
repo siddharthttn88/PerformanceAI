@@ -1,43 +1,20 @@
+| Load | 50000 Users (833 TPS) | Total TPS on Service = 1826 |
+|------|------------------------|-----------------------------|
+| Test Time | 4/2/2026, 4:16:16 PM - 4/2/2026, 4:19:16 PM (3 minutes) | Ramp-up = 1 Minute |
+| Test Status | PASS |  |
+| Comment | Run on load env <br> Executed from 20 servers <br> Mock server pods = 15, Learn-action = 15 (cpu: 2 core, memory: 2GB), heap: 1000mb, config service = 8 <br> Without CE Caching <br><br> SECOND TIME ON FRESH PODS |  |
 
-========================
-TEST SUMMARY
-========================
-| Metric                | Value                          |
-|----------------------|--------------------------------|
-| Load                 | <total_users> users (<tps>)    |
-| Total TPS (Actual)   | <actual_tps>                   |
-| Test Duration        | <start - end (duration)>       |
-| Ramp-up Time         | <ramp_time>                    |
-| Status               | <PASS/FAIL>                    |
+---
 
-========================
-ENVIRONMENT DETAILS
-========================
-| Component            | Details                        |
-|----------------------|--------------------------------|
-| Load Generators      | <count>                        |
-| Mock Servers         | <count>                        |
-| Application Pods     | <count + CPU + Memory>         |
-| Heap Size            | <value>                        |
-| Config Services      | <count/details>                |
-| Caching              | <enabled/disabled>             |
-
-========================
-API PERFORMANCE METRICS
-========================
-| Type | API Name | Requests | Fails | Avg(ms) | Min(ms) | Max(ms) | RPS  | Failures/s | P90(ms) | P95(ms) |
-|------|----------|----------|-------|---------|---------|---------|------|------------|---------|---------|
-| <T>  | <Name>   | <Req>    | <F>   | <Avg>   | <Min>   | <Max>   | <RPS>| <Fail/s>   | <P90>   | <P95>   |
-| <T>  | <Name>   | <Req>    | <F>   | <Avg>   | <Min>   | <Max>   | <RPS>| <Fail/s>   | <P90>   | <P95>   |
-| ...  | ...      | ...      | ...   | ...     | ...     | ...     | ...  | ...        | ...     | ...     |
-
-========================
-ANALYSIS REQUIRED
-========================
-1. Identify bottlenecks (high latency, spikes, P95 issues)
-2. Detect unstable APIs under load
-3. Correlate RPS vs latency behavior
-4. Highlight risks despite PASS status
-5. Suggest performance improvements
-6. Identify scaling/architecture issues
-7. Highlight anomalies
+| Type | Name | # Requests | # Fails | Average (ms) | Min (ms) | Max (ms) | RPS | Failures/s | 90%ile (ms) | 95%ile (ms) |
+|------|------|-----------:|--------:|-------------:|---------:|---------:|-----:|------------:|------------:|------------:|
+| POST | LA-Bookmark | 7599 | 0 | 218.19 | 115 | 559 | 42.2 | 0 | 300 | 310 |
+| POST | LA-Clicked_on_Search_Result | 7622 | 0 | 254.92 | 116 | 547 | 42.33 | 0 | 370 | 410 |
+| POST | LA-end_watching | 27355 | 0 | 241.52 | 127 | 616 | 151.92 | 0 | 320 | 330 |
+| POST | LA-start_watching | 138088 | 0 | 280.26 | 128 | 1489 | 766.88 | 0 | 400 | 440 |
+| POST | LA-stop_watching | 110185 | 0 | 241.56 | 127 | 757 | 611.92 | 0 | 320 | 330 |
+| POST | Pub LA-Bookmark | 7585 | 0 | 231.28 | 114 | 553 | 42.12 | 0 | 310 | 320 |
+| POST | Pub LA-Clicked_on_Search_Result | 7585 | 0 | 254.88 | 116 | 557 | 42.12 | 0 | 370 | 400 |
+| POST | Pub LA-end_watching | 7585 | 0 | 235.12 | 114 | 620 | 42.12 | 0 | 320 | 440 |
+| POST | Pub LA-start_watching | 7621 | 0 | 253.33 | 114 | 558 | 42.32 | 0 | 360 | 410 |
+| POST | Pub LA-stop_watching | 7599 | 0 | 219.03 | 115 | 444 | 42.2 | 0 | 300 | 310 |
