@@ -93,3 +93,87 @@ node jenkins-client.js status "Locust Code n Data Copy" <BUILD_NUMBER>
 
 ---
 
+## 3. Complete Load Testing Workflow
+
+### Overview
+End-to-end workflow for running load tests, collecting infrastructure metrics, and publishing results.
+
+### Workflow Steps
+
+#### Step 1: Run Load Test via Jenkins
+```bash
+# Trigger Locust test with desired parameters
+node jenkins-client.js build "Locust - Test Runner" Master_IP=10.16.7.202 Users=<USER_COUNT> RampUp=<CALCULATED_RAMPUP> Duration=<DURATION>
+# Note: Calculate RampUp = Users/60
+
+# Monitor build status
+node jenkins-client.js status "Locust - Test Runner" <BUILD_NUMBER>
+```
+
+#### Step 2: Fetch Test Report
+- Wait for test completion
+- Retrieve HTML report from Reports folder
+- Default location: `D:\PerformanceAI\Reports\result.html`
+
+#### Step 3: Collect Infrastructure Metrics
+**Ask User:**
+- Which service was tested?
+- Google Sheet link for results?
+
+**Fetch from Grafana/New Relic:**
+- Number of Pods
+- CPU Allocated & Utilization
+- Memory Allocated & Utilization
+- Use test timestamp from HTML report to filter metrics
+
+**Monitor for Issues:**
+- High response times (>1000ms average)
+- High CPU utilization (>80%)
+- High memory utilization (>80%)
+- Error rates and failure patterns
+
+#### Step 4: Prepare Comment Section
+Include in `--comment` parameter:
+```
+Service: <SERVICE_NAME>
+Infrastructure:
+- Pods: <COUNT>
+- CPU: <ALLOCATED> (<UTILIZATION>% utilized)
+- Memory: <ALLOCATED> (<UTILIZATION>% utilized)
+
+Test Results:
+- Total endpoints tested: <COUNT>
+- Total failures: <COUNT> (<PERCENTAGE>%)
+- Max response time: <VALUE>ms
+
+Issues Detected:
+- [List any high response times, resource utilization issues from monitoring]
+```
+
+#### Step 5: Upload to Google Sheet
+```bash
+node upload-with-template.js "<HTML_REPORT_PATH>" "<SPREADSHEET_ID>" --users <USER_COUNT> --rampup "<RAMPUP_TIME>" --comment "<COMMENT_TEXT_WITH_INFRA_METRICS>"
+```
+
+### Example Complete Workflow
+```bash
+# 1. Run test
+node jenkins-client.js build "Locust - Test Runner" Master_IP=10.16.7.202 Users=5000 RampUp=84 Duration=5m
+
+# 2. Wait for completion and fetch report
+# Report location: D:\AstroPayTV\PayTV\reports\result.html
+
+# 3. Fetch infra metrics (automatic via Grafana/New Relic APIs using test timestamp)
+
+# 4. Upload results with infrastructure context
+node upload-with-template.js "D:\AstroPayTV\PayTV\reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 5000 --rampup "84 seconds" --comment "PayTV Service Load Test\nInfrastructure: 8 Pods | CPU: 4 cores (65% utilized) | Memory: 16GB (72% utilized)\nTotal failures: 125 (0.03%)\nMax response time: 8,234ms\n\nIssues: Response time spike at 11:45 PM, CPU peaked at 78%"
+```
+
+### Notes
+- Always calculate RampUp as Users/60 for consistent load ramp
+- Fetch infrastructure metrics using test start/end timestamps for accuracy
+- Monitor both application metrics (Grafana) and APM data (New Relic)
+- Document any anomalies or performance issues in the comment section
+
+---
+
