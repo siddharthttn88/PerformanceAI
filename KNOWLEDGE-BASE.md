@@ -60,13 +60,13 @@ node upload-with-template.js "D:\AstroPayTV\PayTV\reports\result.html" "1ngmUfc0
 **Parameters**:
 - `Master_IP` (default: "10.16.7.202") - IP address of Locust master node
 - `Users` (required) - Total number of concurrent users to simulate
-- `RampUp` (default: "16") - Ramp-up time in seconds (Users/RampUp = users/sec)
+- `RampUp` (default: "16") - User ramp rate in users/second (calculation based on system-specific formula)
 - `Duration` (default: "3m") - Test duration (e.g., "3m", "30s", "1h")
 
 **Usage**:
 ```bash
-node jenkins-client.js build "Locust - Test Runner" Master_IP=10.16.7.202 Users=80000 RampUp=1334 Duration=3m
-# Note: Calculate RampUp = Users/60 before passing (80000/60 ≈ 1334)
+node jenkins-client.js build "Locust - Test Runner" Master_IP=10.16.7.202 Users=10 RampUp=0.66 Duration=3m
+# Note: RampUp is the user ramp rate (users/second) - use system-specific calculation
 node jenkins-client.js status "Locust - Test Runner" <BUILD_NUMBER>
 ```
 
@@ -103,8 +103,8 @@ End-to-end workflow for running load tests, collecting infrastructure metrics, a
 #### Step 1: Run Load Test via Jenkins
 ```bash
 # Trigger Locust test with desired parameters
-node jenkins-client.js build "Locust - Test Runner" Master_IP=10.16.7.202 Users=<USER_COUNT> RampUp (no. of users per sec)=<CALCULATED_RAMPUP> Duration=<DURATION>
-# Note: Calculate RampUp = total Users/Ramp up duration (in second)
+node jenkins-client.js build "Locust - Test Runner" Master_IP=10.16.7.202 Users=<USER_COUNT> RampUp=<RAMP_RATE> Duration=<DURATION>
+# Note: RampUp is the user ramp rate in users/second (use system-specific calculation)
 
 # Monitor build status
 node jenkins-client.js status "Locust - Test Runner" <BUILD_NUMBER>
