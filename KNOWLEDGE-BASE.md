@@ -103,8 +103,8 @@ End-to-end workflow for running load tests, collecting infrastructure metrics, a
 #### Step 1: Run Load Test via Jenkins
 ```bash
 # Trigger Locust test with desired parameters
-node jenkins-client.js build "Locust - Test Runner" Master_IP=10.16.7.202 Users=<USER_COUNT> RampUp=<CALCULATED_RAMPUP> Duration=<DURATION>
-# Note: Calculate RampUp = Users/60
+node jenkins-client.js build "Locust - Test Runner" Master_IP=10.16.7.202 Users=<USER_COUNT> RampUp (no. of users per sec)=<CALCULATED_RAMPUP> Duration=<DURATION>
+# Note: Calculate RampUp = total Users/Ramp up duration (in second)
 
 # Monitor build status
 node jenkins-client.js status "Locust - Test Runner" <BUILD_NUMBER>
