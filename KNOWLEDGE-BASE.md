@@ -148,6 +148,8 @@ Test Results:
 
 Issues Detected:
 - [List any high response times, resource utilization issues from monitoring]
+- Slowest endpoints: [List top 5 endpoints with avg response times, if >1000ms]
+- Bottleneck endpoint: [Identify endpoint with highest avg response time or failure rate]
 ```
 
 #### Step 5: Upload to Google Sheet
@@ -174,6 +176,325 @@ node upload-with-template.js "D:\AstroPayTV\PayTV\reports\result.html" "1ngmUfc0
 - Fetch infrastructure metrics using test start/end timestamps for accuracy
 - Monitor both application metrics (Grafana) and APM data (New Relic)
 - Document any anomalies or performance issues in the comment section
+
+---
+
+## 4. Breaking Point Load Test Mode
+
+### Overview
+Execute multiple load test iterations with increasing user counts (n1, n2, n3...) to identify the application's breaking point. Tests automatically stop when breaking point criteria are met or all iterations complete.
+
+### Breaking Point Criteria
+Test stops when ANY of the following conditions are met:
+- **API Response Time**: Average response time >1000ms
+- **CPU Utilization**: >80% on any pod
+- **Memory Utilization**: >80% on any pod
+- **Error Rate**: Failures >5%
+- **Pod Restarts**: Any pod restarts detected during test
+
+### Workflow
+
+#### Step 1: Define Test Iterations
+Plan your load progression (example):
+```
+Iteration 1: 1,000 users
+Iteration 2: 5,000 users
+Iteration 3: 10,000 users
+Iteration 4: 25,000 users
+Iteration 5: 50,000 users
+Iteration 6: 100,000 users
+```
+
+#### Step 2: Execute Complete Load Test Flow for Each Iteration
+
+For each iteration, follow the **Complete Load Testing Workflow** (Section 3):
+
+##### 2.1 Run Load Test via Jenkins
+```bash
+# Trigger Locust test
+node jenkins-client.js build "Locust - Test Runner" Master_IP=<MASTER_IP> Users=<USER_COUNT> RampUp=<RATE> Duration=<DURATION>
+
+# Wait for test completion
+node jenkins-client.js wait "Locust - Test Runner" <BUILD_NUMBER>
+```
+
+##### 2.2 Fetch Test Report
+```bash
+# Report automatically saved to: D:\PerformanceAI\Reports\result.html
+# Extract test metadata
+node inspect-data.js "D:\PerformanceAI\Reports\result.html"
+```
+
+##### 2.3 Collect Infrastructure Metrics
+```bash
+# Fetch pod metrics from Grafana (use test duration + buffer)
+node get-pod-metrics.js <SERVICE_NAME> 5
+
+# Fetch APM metrics from New Relic  
+node get-apm-metrics.js <SERVICE_NAME> 5
+```
+
+##### 2.4 Analyze Metrics & Check Breaking Point Criteria
+
+**From Test Report** (result.html):
+- Total requests
+- Total failures → Calculate error rate
+- Average response time per API
+- P95/P99 response times
+- Identify slowest endpoints (sort by avg_response_time)
+
+**From Grafana** (get-pod-metrics.js):
+- Current CPU utilization per pod
+- Current memory utilization per pod
+- Pod status (Running/Restarting)
+- Container restarts count
+
+**From New Relic** (get-apm-metrics.js):
+- Application-level response times
+- Host-level response times
+- Throughput (requests per minute)
+- Error rates
+
+**Breaking Point Check**:
+```
+BREAKING_POINT = false
+
+IF any API avg_response_time > 1000ms:
+  BREAKING_POINT = true
+  REASON = "High API Response Time"
+  
+IF any pod CPU utilization > 80%:
+  BREAKING_POINT = true
+  REASON = "High CPU Utilization"
+  
+IF any pod Memory utilization > 80%:
+  BREAKING_POINT = true
+  REASON = "High Memory Utilization"
+  
+IF error_rate > 5%:
+  BREAKING_POINT = true
+  REASON = "High Error Rate"
+  
+IF any pod restarts detected:
+  BREAKING_POINT = true
+  REASON = "Pod Instability"
+```
+
+##### 2.5 Prepare Comment Section with Breaking Point Status
+
+```bash
+# For iterations that PASS (no breaking point)
+COMMENT="✅ Breaking Point Test - Iteration <N>
+
+Service: <SERVICE_NAME>
+Load: <USER_COUNT> users
+
+Infrastructure:
+- Pods: <COUNT>
+- CPU: <ALLOCATED> cores (<AVG_UTILIZATION>% avg, <MAX_UTILIZATION>% peak)
+- Memory: <ALLOCATED> GB (<AVG_UTILIZATION>% avg, <MAX_UTILIZATION>% peak)
+
+Test Results:
+- Total requests: <COUNT>
+- Total failures: <COUNT> (<ERROR_RATE>%)
+- Avg response time: <VALUE>ms
+- P95 response time: <VALUE>ms
+- Max response time: <VALUE>ms
+- Slowest endpoint: <ENDPOINT_NAME> (<RESPONSE_TIME>ms avg)
+
+Status: ✅ PASS - No breaking point criteria met
+Next: Continue to iteration <N+1>"
+```
+
+```bash
+# For iteration that FAILS (breaking point reached)
+COMMENT="🔴 BREAKING POINT TEST - Final Iteration <N>
+
+Service: <SERVICE_NAME>
+Load: <USER_COUNT> users
+
+Breaking Point Summary:
+- Maximum Stable Load: <PREVIOUS_ITERATION_USERS> users
+- Breaking Point Load: <CURRENT_ITERATION_USERS> users
+- Breaking Point Criteria Met:
+  * <CRITERIA>: <VALUE> (Threshold: <THRESHOLD>)
+
+Infrastructure at Breaking Point:
+- Pods: <COUNT>
+- CPU: <ALLOCATED> cores (<UTILIZATION>% utilized)
+- Memory: <ALLOCATED> GB (<UTILIZATION>% utilized)
+
+Test Results:
+- Total requests: <COUNT>
+- Total failures: <COUNT> (<ERROR_RATE>%)
+- Avg response time: <VALUE>ms
+- P95 response time: <VALUE>ms
+
+Slowest Endpoints (Breaking Point):
+1. <ENDPOINT_1>: <RESPONSE_TIME>ms avg (<FAILURES> failures)
+2. <ENDPOINT_2>: <RESPONSE_TIME>ms avg (<FAILURES> failures)
+3. <ENDPOINT_3>: <RESPONSE_TIME>ms avg (<FAILURES> failures)
+
+Previous Iterations:
+- Iteration 1: <USERS> users - ✅ PASS
+- Iteration 2: <USERS> users - ✅ PASS
+- Iteration <N>: <USERS> users - 🔴 FAIL
+
+Recommendations:
+- Maximum safe load: <80% of breaking point> users
+- Bottleneck endpoint: <SLOWEST_ENDPOINT_NAME> (optimize this first)
+- Infrastructure bottleneck: <IDENTIFIED_BOTTLENECK>
+- Suggested action: <SCALING_OR_OPTIMIZATION_ADVICE>"
+```
+
+##### 2.6 Upload Results to Google Sheet
+```bash
+node upload-with-template.js "D:\PerformanceAI\Reports\result.html" "<SPREADSHEET_ID>" --users <USER_COUNT> --rampup "<RAMPUP_TIME>" --comment "<PREPARED_COMMENT>"
+```
+
+#### Step 3: Decision Logic
+```
+IF BREAKING_POINT == true:
+  - Upload final results with breaking point report
+  - STOP all iterations
+  - Generate breaking point analysis summary
+ELSE:
+  - Upload current iteration results
+  - Wait 2-3 minutes for system cooldown
+  - CONTINUE to next iteration
+```
+
+#### Step 4: Repeat for All Planned Iterations
+
+Continue executing **Step 2** (Complete Load Test Flow) for each planned iteration until:
+- Breaking point is reached (any criteria met), OR
+- All planned iterations complete successfully
+
+### Example Breaking Point Test Execution
+
+**Test Plan**: Service: subscriber-event-service | Master IP: 10.16.7.34 | Duration: 3m per iteration
+
+#### Iteration 1: 1,000 Users
+
+```bash
+# Step 1: Run test
+node jenkins-client.js build "Locust - Test Runner" Master_IP=10.16.7.34 Users=1000 RampUp=17 Duration=3m
+node jenkins-client.js wait "Locust - Test Runner" 426
+
+# Step 2: Fetch report (auto-saved)
+node inspect-data.js "D:\PerformanceAI\Reports\result.html"
+# Output: duration=3m, requests=15000, failures=0, avg_response=250ms
+
+# Step 3: Collect metrics
+node get-pod-metrics.js subscriber-event-service 5
+# Output: 20 pods, CPU: 15% avg, Memory: 45% avg, No restarts
+
+node get-apm-metrics.js subscriber-event 5
+# Output: Response time: 250ms avg, Throughput: 5000 rpm, Error rate: 0%
+
+# Step 4: Check breaking point
+# ✅ Response time: 250ms (<1000ms) - PASS
+# ✅ CPU: 15% (<80%) - PASS
+# ✅ Memory: 45% (<80%) - PASS
+# ✅ Error rate: 0% (<5%) - PASS
+# ✅ No pod restarts - PASS
+# Decision: CONTINUE
+
+# Step 5: Upload results
+node upload-with-template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 1000 --rampup "60 seconds" --comment "✅ Breaking Point Test - Iteration 1`nService: subscriber-event-service`nLoad: 1,000 users`n`nInfrastructure:`n- Pods: 20`n- CPU: 4 cores (15% avg)`n- Memory: 4 GB (45% avg)`n`nTest Results:`n- Total requests: 15,000`n- Total failures: 0 (0%)`n- Avg response time: 250ms`n- P95: 320ms`n- Slowest endpoint: /api/get-profile (280ms avg)`n`nStatus: ✅ PASS - All criteria met`nNext: Continue to iteration 2"
+
+# Wait 3 minutes for cooldown
+Start-Sleep -Seconds 180
+```
+
+#### Iteration 2: 5,000 Users
+
+```bash
+# Step 1: Run test
+node jenkins-client.js build "Locust - Test Runner" Master_IP=10.16.7.34 Users=5000 RampUp=84 Duration=3m
+node jenkins-client.js wait "Locust - Test Runner" 427
+
+# Step 2: Fetch report
+node inspect-data.js "D:\PerformanceAI\Reports\result.html"
+# Output: duration=3m, requests=75000, failures=120, avg_response=450ms
+
+# Step 3: Collect metrics
+node get-pod-metrics.js subscriber-event-service 5
+# Output: 20 pods, CPU: 35% avg, Memory: 60% avg, No restarts
+
+node get-apm-metrics.js subscriber-event 5
+# Output: Response time: 450ms avg, Throughput: 25000 rpm, Error rate: 0.16%
+
+# Step 4: Check breaking point
+# ✅ Response time: 450ms (<1000ms) - PASS
+# ✅ CPU: 35% (<80%) - PASS
+# ✅ Memory: 60% (<80%) - PASS
+# ✅ Error rate: 0.16% (<5%) - PASS
+# ✅ No pod restarts - PASS
+# Decision: CONTINUE
+
+# Step 5: Upload results
+node upload-with-template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 5000 --rampup "60 seconds" --comment "✅ Breaking Point Test - Iteration 2`nService: subscriber-event-service`nLoad: 5,000 users`n`nInfrastructure:`n- Pods: 20`n- CPU: 4 cores (35% avg)`n- Memory: 4 GB (60% avg)`n`nTest Results:`n- Total requests: 75,000`n- Total failures: 120 (0.16%)`n- Avg response time: 450ms`n- P95: 670ms`n- Slowest endpoint: /api/get-history (820ms avg)`n`nStatus: ✅ PASS - All criteria met`nNext: Continue to iteration 3"
+
+# Wait 3 minutes for cooldown
+Start-Sleep -Seconds 180
+```
+
+#### Iteration 3: 10,000 Users (Breaking Point Reached)
+
+```bash
+# Step 1: Run test
+node jenkins-client.js build "Locust - Test Runner" Master_IP=10.16.7.34 Users=10000 RampUp=167 Duration=3m
+node jenkins-client.js wait "Locust - Test Runner" 428
+
+# Step 2: Fetch report
+node inspect-data.js "D:\PerformanceAI\Reports\result.html"
+# Output: duration=3m, requests=150000, failures=2500, avg_response=1250ms
+
+# Step 3: Collect metrics
+node get-pod-metrics.js subscriber-event-service 5
+# Output: 20 pods, CPU: 75% avg, Memory: 82% avg, No restarts
+
+node get-apm-metrics.js subscriber-event 5
+# Output: Response time: 1250ms avg, Throughput: 48000 rpm, Error rate: 1.67%
+
+# Step 4: Check breaking point
+# 🔴 Response time: 1250ms (>1000ms) - FAIL
+# ✅ CPU: 75% (<80%) - PASS
+# 🔴 Memory: 82% (>80%) - FAIL
+# ✅ Error rate: 1.67% (<5%) - PASS
+# ✅ No pod restarts - PASS
+# Decision: BREAKING POINT REACHED - STOP
+
+# Step 5: Upload final breaking point report
+node upload-with-template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 10000 --rampup "60 seconds" --comment "🔴 BREAKING POINT TEST - Final Iteration 3`n`nService: subscriber-event-service`nLoad: 10,000 users`n`nBreaking Point Summary:`n- Maximum Stable Load: 5,000 users`n- Breaking Point Load: 10,000 users`n- Criteria Met:`n  * Response Time: 1250ms (Threshold: 1000ms) 🔴`n  * Memory: 82% (Threshold: 80%) 🔴`n`nInfrastructure at Breaking Point:`n- Pods: 20`n- CPU: 4 cores (75% utilized)`n- Memory: 4 GB (82% utilized)`n`nSlowest Endpoints:`n1. /api/get-history: 1850ms avg (1200 failures)`n2. /api/search-content: 1450ms avg (800 failures)`n3. /api/get-recommendations: 1150ms avg (500 failures)`n`nTest Progression:`n- Iteration 1: 1,000 users - ✅ PASS (250ms, CPU 15%, Mem 45%)`n- Iteration 2: 5,000 users - ✅ PASS (450ms, CPU 35%, Mem 60%)`n- Iteration 3: 10,000 users - 🔴 FAIL (1250ms, CPU 75%, Mem 82%)`n`nRecommendations:`n- Maximum safe load: 8,000 users (80% of breaking point)`n- Bottleneck endpoint: /api/get-history (optimize database query first)`n- Infrastructure bottleneck: Memory pressure causing GC overhead`n- Actions: 1) Optimize /api/get-history query, 2) Increase memory to 6GB per pod, or 3) Scale to 30 pods"
+
+# Test complete - breaking point identified at 10,000 users
+```
+
+### Automation Tips
+
+**Calculate RampUp for each iteration**:
+- Use system-specific formula: RampUp = Users / Ramp-up duration (seconds)
+- For 60-second ramp-up: RampUp = Users / 60
+
+**Consistent test duration**:
+- Recommended: 3-5 minutes per iteration
+- Allows system to stabilize under load
+
+**Wait time between iterations**:
+- Allow 2-3 minutes between tests for system cooldown
+- Ensures metrics reset to baseline
+
+**Document all iterations**:
+- Upload results after EACH iteration to track progression
+- Use 6 blank lines separation between results in Google Sheet
+
+### Notes
+- Breaking point tests consume significant resources - coordinate with infrastructure team
+- Best performed during off-peak hours or in isolated test environments
+- Document baseline metrics before starting iteration sequence
+- Consider horizontal pod autoscaling (HPA) behavior during test
 
 ---
 
