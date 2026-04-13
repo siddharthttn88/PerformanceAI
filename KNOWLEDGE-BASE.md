@@ -15,6 +15,10 @@ node upload-with-template.js "<HTML_REPORT_PATH>" "<SPREADSHEET_ID>" --users <US
 - **Leave 6 blank lines** beneath previous test results before appending new results
 - **Always use result format** from `template.txt`
 - **TPS Calculation**: TPS = Users / Ramp up (displays in Load cell)
+- **Test Time**: Always extract start time, end time, and duration from `result.html` (auto-detected by script)
+  - Script automatically parses test timestamps from HTML report
+  - Timezone conversion: UTC → IST (GMT+5:30)
+  - Format: "M/D/YYYY, H:MM:SS AM/PM - H:MM:SS AM/PM (X minutes Y seconds)"
 - **Infrastructure Config (Add to Comments section)**: 
   - Ask user which service is being tested
   - Fetch correct service name from Grafana dashboard or New Relic
@@ -38,10 +42,12 @@ node upload-with-template.js "D:\AstroPayTV\PayTV\reports\result.html" "1ngmUfc0
 - `--comment`: Multi-line comment with test details (use `\n` for line breaks)
 
 ### Notes
-- Script automatically detects test time from HTML report
+- **Script automatically extracts all timing information from result.html** - no manual time input needed
+- Test start time, end time, and duration are parsed directly from the HTML report
 - Duration is parsed from HTML (format: "X minutes and Y seconds")
-- Timezone conversion: UTC → IST (GMT+5:30)
+- Timezone conversion: UTC → IST (GMT+5:30) automatically applied
 - Status auto-determined based on failures (Pass/Fail)
+- Do not manually specify test times - always let the script read from result.html
 
 ---
 
