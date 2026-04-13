@@ -126,36 +126,73 @@ node jenkins-client.js status "Locust - Test Runner" <BUILD_NUMBER>
 - Which service was tested?
 - Google Sheet link for results?
 
-**Fetch from Grafana/New Relic:**
-- Number of Pods
-- CPU Allocated & Utilization
-- Memory Allocated & Utilization
-- Use test timestamp from HTML report to filter metrics
+**Fetch from Grafana (Kubernetes Metrics):**
+```bash
+node get-pod-metrics.js <service-name> 5
+```
+- Number of Pods (Running/Pending/Failed)
+- CPU Allocated & Utilization per pod
+- Memory Allocated & Utilization per pod
+- Network I/O (RX/TX rates)
+- Pod restarts count
+- Pod status and health
+
+**Fetch from New Relic (APM Metrics):**
+```bash
+node get-apm-metrics.js <application-name> 5
+```
+- Application health status and Apdex score
+- Overall response time and throughput
+- Error rate and error count
+- Host-level metrics (response times per pod)
+- Top transactions by count and duration
+- Slowest endpoints identification
 
 **Monitor for Issues:**
 - High response times (>1000ms average)
 - High CPU utilization (>80%)
 - High memory utilization (>80%)
 - Error rates and failure patterns
+- Slow endpoints (P95/P99 > 1000ms)
+- Memory pressure (pods exceeding limits)
 
 #### Step 4: Prepare Comment Section
 Include in `--comment` parameter:
 ```
 Service: <SERVICE_NAME>
-Infrastructure:
-- Pods: <COUNT>
-- CPU: <ALLOCATED> (<UTILIZATION>% utilized)
-- Memory: <ALLOCATED> (<UTILIZATION>% utilized)
+
+Infrastructure (Kubernetes):
+- Pods: <COUNT> (<RUNNING> running, <PENDING> pending, <FAILED> failed)
+- CPU: <ALLOCATED> cores (<AVG_UTILIZATION>% avg, <MAX_UTILIZATION>% peak)
+- Memory: <ALLOCATED> GB (<AVG_UTILIZATION>% avg, <MAX_UTILIZATION>% peak)
+- Network: RX <RX_RATE> KB/s, TX <TX_RATE> KB/s
+- Pod Restarts: <COUNT> (if any)
+
+APM Metrics (New Relic):
+- Health: <STATUS> | Apdex: <SCORE>
+- Response Time: <AVG>ms (P95: <P95>ms, P99: <P99>ms)
+- Throughput: <VALUE> rpm
+- Error Rate: <PERCENTAGE>%
+- Total Errors: <COUNT>
 
 Test Results:
-- Total endpoints tested: <COUNT>
+- Total endpoints: <COUNT>
 - Total failures: <COUNT> (<PERCENTAGE>%)
+- Avg response time: <VALUE>ms
 - Max response time: <VALUE>ms
 
+Slowest Endpoints (Top 5):
+1. <ENDPOINT_1>: <AVG_TIME>ms avg, <REQUESTS> requests, <FAILURES> failures
+2. <ENDPOINT_2>: <AVG_TIME>ms avg, <REQUESTS> requests, <FAILURES> failures
+3. <ENDPOINT_3>: <AVG_TIME>ms avg, <REQUESTS> requests, <FAILURES> failures
+4. <ENDPOINT_4>: <AVG_TIME>ms avg, <REQUESTS> requests, <FAILURES> failures
+5. <ENDPOINT_5>: <AVG_TIME>ms avg, <REQUESTS> requests, <FAILURES> failures
+
 Issues Detected:
-- [List any high response times, resource utilization issues from monitoring]
-- Slowest endpoints: [List top 5 endpoints with avg response times, if >1000ms]
-- Bottleneck endpoint: [Identify endpoint with highest avg response time or failure rate]
+- [Analyze Grafana + New Relic data to identify bottlenecks]
+- Bottleneck Type: <CPU/Memory/Database/Network/Application>
+- Root Cause: <Brief analysis based on metrics>
+- Recommended Action: <Specific suggestion based on data>
 ```
 
 #### Step 5: Upload to Google Sheet
@@ -169,19 +206,74 @@ node upload-with-template.js "<HTML_REPORT_PATH>" "<SPREADSHEET_ID>" --users <US
 node jenkins-client.js build "Locust - Test Runner" Master_IP=10.16.7.202 Users=5000 RampUp=84 Duration=5m
 
 # 2. Wait for completion and fetch report
-# Report location: D:\AstroPayTV\PayTV\reports\result.html
+node jenkins-client.js wait "Locust - Test Runner" 427
+# Report location: D:\PerformanceAI\Reports\result.html
 
-# 3. Fetch infra metrics (automatic via Grafana/New Relic APIs using test timestamp)
+# 3. Fetch infrastructure metrics (using test timestamp for accuracy)
+node get-pod-metrics.js subscriber-event 5
+# Output: 20 pods, CPU: 35% avg, Memory: 60% avg, No restarts
 
-# 4. Upload results with infrastructure context
-node upload-with-template.js "D:\AstroPayTV\PayTV\reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 5000 --rampup "84 seconds" --comment "PayTV Service Load Test\nInfrastructure: 8 Pods | CPU: 4 cores (65% utilized) | Memory: 16GB (72% utilized)\nTotal failures: 125 (0.03%)\nMax response time: 8,234ms\n\nIssues: Response time spike at 11:45 PM, CPU peaked at 78%"
+node get-apm-metrics.js subscriber-event 5
+# Output: Response time: 450ms avg, Throughput: 25000 rpm, Error rate: 0.16%, Top transactions
+
+# 4. Analyze metrics and identify issues
+# - Compare Grafana (infrastructure) vs New Relic (application) metrics
+# - Identify slowest endpoints from New Relic Top Transactions
+# - Check for resource bottlenecks (CPU/Memory >80%)
+# - Correlate error patterns with infrastructure events
+
+# 5. Upload results with comprehensive analysis
+node upload-with-template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 5000 --rampup "1 minute" --comment "Subscriber Event Service Load Test
+
+Infrastructure (Kubernetes):
+- Pods: 20 (all running, no restarts)
+- CPU: 4 cores allocated (35% avg, 42% peak)
+- Memory: 4 GB allocated (60% avg, 68% peak)
+- Network: RX 8,200 KB/s, TX 4,100 KB/s
+
+APM Metrics (New Relic):
+- Health: Green | Apdex: 0.94
+- Response Time: 450ms avg (P95: 670ms, P99: 820ms)
+- Throughput: 25,000 rpm
+- Error Rate: 0.16%
+- Total Errors: 120
+
+Test Results:
+- Total endpoints: 12
+- Total requests: 75,000
+- Total failures: 120 (0.16%)
+- Avg response time: 450ms
+- Max response time: 1,850ms
+
+Slowest Endpoints (Top 5):
+1. /api/get-history: 820ms avg, 15,000 requests, 80 failures
+2. /api/search-content: 650ms avg, 12,000 requests, 25 failures
+3. /api/get-recommendations: 580ms avg, 10,000 requests, 15 failures
+4. /api/user-profile: 420ms avg, 18,000 requests, 0 failures
+5. /api/get-favorites: 380ms avg, 8,000 requests, 0 failures
+
+Analysis:
+- Bottleneck: Database queries (get-history endpoint)
+- Root Cause: Unoptimized queries without proper indexing
+- Evidence: 
+  * CPU/Memory healthy (<70%) but response times elevated
+  * Slowest endpoints all DB-heavy operations
+  * Linear degradation with request count
+- Recommended Action: Add database indexes on history table, implement query caching
+
+Status: PASS - All metrics within acceptable thresholds
+Next Steps: Optimize database queries before scaling to 10K users"
 ```
 
 ### Notes
-- Always calculate RampUp as Users/60 for consistent load ramp
+- **Always collect both Grafana and New Relic metrics** - Infrastructure alone doesn't reveal application bottlenecks
+- Calculate RampUp as Users/60 for 1-minute ramp (or Users/RampupSeconds for custom durations)
 - Fetch infrastructure metrics using test start/end timestamps for accuracy
-- Monitor both application metrics (Grafana) and APM data (New Relic)
-- Document any anomalies or performance issues in the comment section
+- Monitor both application metrics (Grafana/Prometheus) and APM data (New Relic)
+- **Cross-reference metrics**: High response time + low CPU/Memory = I/O bottleneck (database/network)
+- **Identify slowest endpoints**: Use New Relic Top Transactions to prioritize optimization
+- Document all anomalies, correlations, and root cause analysis in the comment section
+- Include specific recommendations based on metrics (not generic suggestions)
 
 ---
 
@@ -233,11 +325,13 @@ node inspect-data.js "D:\PerformanceAI\Reports\result.html"
 
 ##### 2.3 Collect Infrastructure Metrics
 ```bash
-# Fetch pod metrics from Grafana (use test duration + buffer)
+# Fetch pod metrics from Grafana/Prometheus (Kubernetes infrastructure)
 node get-pod-metrics.js <SERVICE_NAME> 5
+# Returns: Pod count, CPU/Memory utilization, Network I/O, Pod status, Restarts
 
-# Fetch APM metrics from New Relic  
-node get-apm-metrics.js <SERVICE_NAME> 5
+# Fetch APM metrics from New Relic (Application performance)
+node get-apm-metrics.js <APPLICATION_NAME> 5
+# Returns: Response times, Throughput, Error rates, Top transactions, Slowest endpoints
 ```
 
 ##### 2.4 Analyze Metrics & Check Breaking Point Criteria
@@ -249,41 +343,66 @@ node get-apm-metrics.js <SERVICE_NAME> 5
 - P95/P99 response times
 - Identify slowest endpoints (sort by avg_response_time)
 
-**From Grafana** (get-pod-metrics.js):
-- Current CPU utilization per pod
-- Current memory utilization per pod
-- Pod status (Running/Restarting)
-- Container restarts count
+**From Grafana/Prometheus** (get-pod-metrics.js):
+- Pod count and status (Running/Pending/Failed)
+- Current CPU utilization per pod (millicores)
+- Current memory utilization per pod (MB)
+- CPU/Memory as % of allocated limits
+- Pod restarts count (last 5 minutes)
+- Network I/O (RX/TX rates in KB/s)
 
 **From New Relic** (get-apm-metrics.js):
-- Application-level response times
-- Host-level response times
+- Application health status and Apdex score
+- Application-level response times (avg, P95, P99)
+- Host-level response times (per pod/instance)
 - Throughput (requests per minute)
-- Error rates
+- Error rates and total error count
+- Top transactions by request count
+- Slowest transactions by avg duration
+- Recent deployments (if any)
 
 **Breaking Point Check**:
 ```
 BREAKING_POINT = false
+REASONS = []
 
+# From Test Report (result.html)
 IF any API avg_response_time > 1000ms:
   BREAKING_POINT = true
-  REASON = "High API Response Time"
-  
-IF any pod CPU utilization > 80%:
-  BREAKING_POINT = true
-  REASON = "High CPU Utilization"
-  
-IF any pod Memory utilization > 80%:
-  BREAKING_POINT = true
-  REASON = "High Memory Utilization"
+  REASONS.append("High API Response Time: <ENDPOINT> at <VALUE>ms")
   
 IF error_rate > 5%:
   BREAKING_POINT = true
-  REASON = "High Error Rate"
+  REASONS.append("High Error Rate: <VALUE>%")
+
+# From Grafana/Prometheus
+IF any pod CPU utilization > 80%:
+  BREAKING_POINT = true
+  REASONS.append("High CPU Utilization: <POD_NAME> at <VALUE>%")
+  
+IF any pod Memory utilization > 80%:
+  BREAKING_POINT = true
+  REASONS.append("High Memory Utilization: <POD_NAME> at <VALUE>%")
   
 IF any pod restarts detected:
   BREAKING_POINT = true
-  REASON = "Pod Instability"
+  REASONS.append("Pod Instability: <COUNT> restarts detected")
+
+# From New Relic APM
+IF APM response_time > 1000ms:
+  BREAKING_POINT = true
+  REASONS.append("High APM Response Time: <VALUE>ms")
+  
+IF APM error_rate > 5%:
+  BREAKING_POINT = true
+  REASONS.append("High APM Error Rate: <VALUE>%")
+
+# Additional Analysis
+IDENTIFY_BOTTLENECK():
+  IF CPU > 80%: BOTTLENECK = "CPU Bound"
+  ELSE IF Memory > 80%: BOTTLENECK = "Memory Bound"
+  ELSE IF response_time high AND CPU/Memory low: BOTTLENECK = "I/O Bound (Database/Network)"
+  ELSE IF error_rate high: BOTTLENECK = "Application-level errors"
 ```
 
 ##### 2.5 Prepare Comment Section with Breaking Point Status
@@ -295,18 +414,35 @@ COMMENT="✅ Breaking Point Test - Iteration <N>
 Service: <SERVICE_NAME>
 Load: <USER_COUNT> users
 
-Infrastructure:
-- Pods: <COUNT>
+Infrastructure (Kubernetes):
+- Pods: <COUNT> (<RUNNING> running, <PENDING> pending)
 - CPU: <ALLOCATED> cores (<AVG_UTILIZATION>% avg, <MAX_UTILIZATION>% peak)
 - Memory: <ALLOCATED> GB (<AVG_UTILIZATION>% avg, <MAX_UTILIZATION>% peak)
+- Network: RX <RX_RATE> KB/s, TX <TX_RATE> KB/s
+- Restarts: None
+
+APM Metrics (New Relic):
+- Health: <STATUS> | Apdex: <SCORE>
+- Response Time: <AVG>ms (P95: <P95>ms)
+- Throughput: <VALUE> rpm
+- Error Rate: <PERCENTAGE>%
 
 Test Results:
 - Total requests: <COUNT>
 - Total failures: <COUNT> (<ERROR_RATE>%)
 - Avg response time: <VALUE>ms
-- P95 response time: <VALUE>ms
 - Max response time: <VALUE>ms
-- Slowest endpoint: <ENDPOINT_NAME> (<RESPONSE_TIME>ms avg)
+
+Slowest Endpoints (Top 3):
+1. <ENDPOINT_1>: <RESPONSE_TIME>ms avg
+2. <ENDPOINT_2>: <RESPONSE_TIME>ms avg
+3. <ENDPOINT_3>: <RESPONSE_TIME>ms avg
+
+Analysis:
+- Bottleneck: None identified
+- CPU/Memory: Healthy (<80% utilization)
+- Response Times: Within SLA (<1000ms)
+- Error Rate: Acceptable (<5%)
 
 Status: ✅ PASS - No breaking point criteria met
 Next: Continue to iteration <N+1>"
@@ -322,35 +458,56 @@ Load: <USER_COUNT> users
 Breaking Point Summary:
 - Maximum Stable Load: <PREVIOUS_ITERATION_USERS> users
 - Breaking Point Load: <CURRENT_ITERATION_USERS> users
-- Breaking Point Criteria Met:
-  * <CRITERIA>: <VALUE> (Threshold: <THRESHOLD>)
+- Criteria Met:
+  * <CRITERIA_1>: <VALUE> (Threshold: <THRESHOLD>) 🔴
+  * <CRITERIA_2>: <VALUE> (Threshold: <THRESHOLD>) 🔴
 
-Infrastructure at Breaking Point:
-- Pods: <COUNT>
-- CPU: <ALLOCATED> cores (<UTILIZATION>% utilized)
-- Memory: <ALLOCATED> GB (<UTILIZATION>% utilized)
+Infrastructure at Breaking Point (Kubernetes):
+- Pods: <COUNT> (<RUNNING> running, <FAILED> failed)
+- CPU: <ALLOCATED> cores (<AVG_UTILIZATION>% avg, <MAX_UTILIZATION>% peak)
+- Memory: <ALLOCATED> GB (<AVG_UTILIZATION>% avg, <MAX_UTILIZATION>% peak)
+- Critical Pod: <POD_NAME> - Memory: <VALUE>% (exceeds limit)
+- Restarts: <COUNT> detected
+
+APM Metrics at Breaking Point (New Relic):
+- Health: <STATUS> | Apdex: <SCORE>
+- Response Time: <AVG>ms (P95: <P95>ms, P99: <P99>ms)
+- Throughput: <VALUE> rpm
+- Error Rate: <PERCENTAGE>%
+- Total Errors: <COUNT>
 
 Test Results:
 - Total requests: <COUNT>
 - Total failures: <COUNT> (<ERROR_RATE>%)
 - Avg response time: <VALUE>ms
-- P95 response time: <VALUE>ms
+- Max response time: <VALUE>ms
 
 Slowest Endpoints (Breaking Point):
 1. <ENDPOINT_1>: <RESPONSE_TIME>ms avg (<FAILURES> failures)
 2. <ENDPOINT_2>: <RESPONSE_TIME>ms avg (<FAILURES> failures)
 3. <ENDPOINT_3>: <RESPONSE_TIME>ms avg (<FAILURES> failures)
 
-Previous Iterations:
-- Iteration 1: <USERS> users - ✅ PASS
-- Iteration 2: <USERS> users - ✅ PASS
-- Iteration <N>: <USERS> users - 🔴 FAIL
+Root Cause Analysis:
+- Primary Bottleneck: <CPU/Memory/I/O/Application>
+- Secondary Issues: <LIST>
+- Evidence:
+  * <METRIC_1>: <VALUE> indicates <ISSUE>
+  * <METRIC_2>: <VALUE> indicates <ISSUE>
+
+Test Progression:
+- Iteration 1: <USERS> users - ✅ PASS (<RT>ms, <ERR>% error, CPU <CPU>%, Mem <MEM>%)
+- Iteration 2: <USERS> users - ✅ PASS (<RT>ms, <ERR>% error, CPU <CPU>%, Mem <MEM>%)
+- Iteration <N>: <USERS> users - 🔴 FAIL (<RT>ms, <ERR>% error, CPU <CPU>%, Mem <MEM>%)
 
 Recommendations:
 - Maximum safe load: <80% of breaking point> users
-- Bottleneck endpoint: <SLOWEST_ENDPOINT_NAME> (optimize this first)
-- Infrastructure bottleneck: <IDENTIFIED_BOTTLENECK>
-- Suggested action: <SCALING_OR_OPTIMIZATION_ADVICE>"
+- Immediate Actions:
+  1. <ACTION_1_BASED_ON_BOTTLENECK>
+  2. <ACTION_2_BASED_ON_METRICS>
+  3. <ACTION_3_FOR_OPTIMIZATION>
+- Bottleneck Endpoint: <SLOWEST_ENDPOINT_NAME> (optimize this first)
+- Infrastructure Action: <SCALING_OR_RESOURCE_INCREASE>
+- Application Action: <CODE_OR_CONFIG_OPTIMIZATION>"
 ```
 
 ##### 2.6 Upload Results to Google Sheet
@@ -501,6 +658,360 @@ node upload-with-template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsO
 - Best performed during off-peak hours or in isolated test environments
 - Document baseline metrics before starting iteration sequence
 - Consider horizontal pod autoscaling (HPA) behavior during test
+
+---
+
+## 5. Metrics Analysis & Issue Identification Guide
+
+### Overview
+Comprehensive guide for analyzing Grafana (Kubernetes) and New Relic (APM) metrics to identify performance bottlenecks and root causes.
+
+### Data Collection Commands
+
+```bash
+# Step 1: Fetch Kubernetes Infrastructure Metrics (Grafana/Prometheus)
+node get-pod-metrics.js <service-name> 5
+
+# Step 2: Fetch Application Performance Metrics (New Relic)
+node get-apm-metrics.js <application-name> 5
+
+# Step 3: Analyze HTML Report
+node inspect-data.js "D:\PerformanceAI\Reports\result.html"
+```
+
+### Metrics to Collect
+
+#### From Grafana/Prometheus (get-pod-metrics.js)
+**Pod Information:**
+- Pod count and distribution across nodes
+- Pod status (Running/Pending/Failed/CrashLoopBackOff)
+- ReplicaSet information
+
+**Resource Utilization:**
+- CPU: Current usage (millicores) and % of limit
+- Memory: Current usage (MB) and % of limit
+- Network I/O: RX/TX rates (KB/s)
+
+**Health Indicators:**
+- Container restart counts (last 5 minutes)
+- Pod lifecycle events
+- Resource requests vs limits
+
+#### From New Relic (get-apm-metrics.js)
+**Application Health:**
+- Overall health status (green/gray/red)
+- Apdex score (0-1 scale)
+- Application reporting status
+
+**Performance Metrics:**
+- Average response time (ms)
+- P95/P99 response times
+- Throughput (requests per minute)
+- Error rate (%) and total error count
+
+**Transaction Analysis:**
+- Top transactions by request count
+- Slowest transactions by avg duration
+- Error breakdown by transaction
+
+**Host/Instance Metrics:**
+- Per-pod response times
+- Per-pod throughput
+- Per-pod error rates
+
+#### From Test Report (result.html)
+**Request Statistics:**
+- Total requests per endpoint
+- Total failures per endpoint
+- Min/Max/Median/P90/P95/P99 response times
+
+**Aggregated Metrics:**
+- Overall error rate
+- Average response time across all endpoints
+- Total RPS (requests per second)
+
+### Issue Identification Framework
+
+#### 1. High Response Time (>1000ms avg)
+
+**Possible Causes:**
+- **Database bottleneck**: Check if endpoints with DB queries are slowest
+- **Memory pressure**: GC thrashing causing pauses
+- **Network latency**: External API calls timing out
+- **Thread exhaustion**: Application unable to process requests
+
+**Analysis Steps:**
+```
+1. Check New Relic slowest transactions
+2. Identify common pattern (DB queries, external calls, computation)
+3. Check Memory utilization from Grafana
+   - IF Memory >80%: Memory-bound issue (GC overhead)
+   - IF Memory <80% AND CPU <80%: I/O bound (database/network)
+4. Review New Relic transaction traces for bottleneck location
+```
+
+**Comment Format:**
+```
+Issue: High Response Time (5,522ms avg)
+Root Cause: Database connection pool exhaustion
+Evidence:
+- New Relic: Slowest endpoints all query-heavy
+- Grafana: Memory at 75%, CPU at 45% (not resource constrained)
+- Pattern: Response time degrades linearly with user count
+Action: Increase database connection pool from 20 to 100
+```
+
+#### 2. High Error Rate (>5%)
+
+**Possible Causes:**
+- **Application errors**: Bugs, unhandled exceptions
+- **Resource exhaustion**: OOM, thread pool full
+- **Timeouts**: Database or external API timeouts
+- **Cascading failures**: Circuit breaker triggered
+
+**Analysis Steps:**
+```
+1. Check New Relic error breakdown by type
+2. Identify most common error class
+3. Check if errors correlate with specific endpoints
+4. Check Grafana for:
+   - Pod restarts (indicates crashes)
+   - Memory exceeding limits (OOM kills)
+   - CPU throttling
+5. Determine if errors are:
+   - Client errors (4xx): Application logic issues
+   - Server errors (5xx): Infrastructure or dependency issues
+```
+
+**Comment Format:**
+```
+Issue: High Error Rate (69.1%)
+Root Cause: Application-level cascading failures from memory exhaustion
+Evidence:
+- Grafana: One pod at 131% memory (5,231MB/4,000MB limit)
+- New Relic: Error rate spikes correlate with memory pressure
+- Pattern: All user-interaction endpoints failing similarly
+Action: Increase pod memory from 4GB to 8GB, review memory leaks
+```
+
+#### 3. High CPU Utilization (>80%)
+
+**Possible Causes:**
+- **Compute-intensive operations**: Heavy calculations, encryption
+- **Inefficient algorithms**: O(n²) complexity in hot path
+- **Insufficient horizontal scaling**: Too few pods for load
+- **Thread contention**: Lock contention causing spin-wait
+
+**Analysis Steps:**
+```
+1. Check Grafana CPU % per pod
+2. Identify if all pods are evenly loaded (load balancing working)
+3. Check New Relic transaction durations:
+   - IF durations proportional to CPU: Compute-bound
+   - IF durations erratic: Thread contention
+4. Compare throughput vs CPU usage:
+   - Linear relationship: Normal compute load
+   - Non-linear: Inefficiency or contention
+```
+
+**Comment Format:**
+```
+Issue: High CPU Utilization (85% avg across pods)
+Root Cause: Compute-bound encryption operations under load
+Evidence:
+- Grafana: All 20 pods at 80-90% CPU
+- New Relic: Encryption endpoint takes 800ms avg (highest)
+- Pattern: CPU scales linearly with user count
+Action: 1) Optimize encryption algorithm, 2) Scale to 40 pods
+```
+
+#### 4. High Memory Utilization (>80%)
+
+**Possible Causes:**
+- **Memory leaks**: Objects not garbage collected
+- **Large object allocation**: Holding too much data in memory
+- **Insufficient heap size**: JVM heap too small
+- **Caching issues**: Unbounded cache growth
+
+**Analysis Steps:**
+```
+1. Check Grafana memory % per pod
+2. Identify if specific pods exceed limits (trigger OOM kills)
+3. Check for pod restarts (indicates OOM crashes)
+4. Review New Relic for:
+   - Memory-intensive endpoints
+   - Gradual memory growth over test duration
+5. Calculate memory per request:
+   - Memory_Used / Total_Requests ratio
+```
+
+**Comment Format:**
+```
+Issue: High Memory Utilization (123% peak, exceeds 4GB limit)
+Root Cause: Memory leak in user session management
+Evidence:
+- Grafana: Memory grows from 1.8GB to 4.9GB during test
+- Pod restarts: 3 pods killed by OOM during test
+- Pattern: Memory never releases, grows with user count
+Action: 1) Increase to 8GB heap, 2) Profile for memory leaks, 3) Review session cleanup
+```
+
+#### 5. Pod Restarts/Instability
+
+**Possible Causes:**
+- **OOM kills**: Memory exceeds limit
+- **Liveness probe failures**: App unresponsive
+- **Crashes**: Unhandled exceptions, segfaults
+- **Resource contention**: Node resource exhaustion
+
+**Analysis Steps:**
+```
+1. Check Grafana restart counts
+2. Correlate restart times with:
+   - Memory spikes
+   - CPU spikes
+   - Error rate increases
+3. Check New Relic for errors before restart
+4. Identify restart pattern:
+   - All pods: Infrastructure or deployment issue
+   - Specific pods: Application or node issue
+```
+
+**Comment Format:**
+```
+Issue: Pod Restarts (5 restarts during test)
+Root Cause: OOM kills due to memory limit breach
+Evidence:
+- Grafana: Restarts correlate with memory hitting 100%
+- Pods terminated with exit code 137 (OOM kill)
+- Pattern: High-traffic pods restart more frequently
+Action: Increase memory limit from 4GB to 8GB per pod
+```
+
+### Bottleneck Decision Tree
+
+```
+START: Analyze test results
+
+                      Response Time >1000ms OR Error Rate >5%?
+                                    |
+                          YES ------+------ NO → System Healthy
+                          |
+                   Check Infrastructure
+                          |
+        +-----------------+-----------------+
+        |                                   |
+   CPU >80%?                           Memory >80%?
+        |                                   |
+    YES | NO                            YES | NO
+        |                                   |
+   CPU-Bound                           Memory-Bound
+        |                                   |
+        v                                   v
+   - Scale pods                        - Increase limits
+   - Optimize                          - Fix memory leaks
+     algorithms                        - Profile heap usage
+        
+                    BOTH <80%?
+                        |
+                      YES
+                        |
+            Check New Relic APM Data
+                        |
+        +---------------+---------------+
+        |                               |
+   Response time                  Error patterns
+   per endpoint?                  by type?
+        |                               |
+        v                               v
+   Slow queries?                  Timeouts?
+        |                               |
+   Database-Bound               Network/I/O-Bound
+        |                               |
+        v                               v
+   - Optimize queries            - Increase timeouts
+   - Add indexes                 - Add connection pools
+   - Scale DB                    - Add circuit breakers
+   - Cache results               - Retry logic
+```
+
+### Sample Analysis Report
+
+**Scenario**: 5,000 users, 69.1% error rate, 7,196ms avg response
+
+```markdown
+## Performance Test Analysis
+
+### Test Summary
+- Load: 5,000 concurrent users
+- Duration: 2 minutes
+- Error Rate: 69.1% (CRITICAL)
+- Avg Response Time: 7,196ms (7.2x threshold)
+
+### Metrics Collected
+**Grafana (Kubernetes):**
+- Pods: 21 running (2 killed by OOM)
+- CPU: 40-50% utilization (HEALTHY)
+- Memory: 65-131% utilization (CRITICAL - exceeds limit)
+- Network: 8MB/s RX, 4MB/s TX (NORMAL)
+
+**New Relic (APM):**
+- Apdex: 0.12 (CRITICAL)
+- Throughput: 406 rpm
+- Error Rate: 69.1% (matches test report)
+- Slowest Endpoints:
+  1. Get_Watch_Again_NEW: 12,500ms avg
+  2. Get_Favourite_List: 9,800ms avg
+  3. Post_Progress: 8,200ms avg
+
+### Root Cause Analysis
+
+**Primary Bottleneck**: Memory Exhaustion (OOM)
+
+**Evidence**:
+1. Grafana shows memory growing from 65% to 131% during test
+2. 2 pods killed by OOM (exit code 137)
+3. CPU healthy at 40-50% - not CPU-bound
+4. New Relic error rate spikes when memory hits 100%
+5. All failing endpoints are user-data operations (session-heavy)
+
+**Secondary Issues**:
+1. Application memory leak in session management
+2. Database connection pool insufficient for load
+3. No graceful degradation when memory constrained
+
+### Recommendations
+
+**Immediate (Critical)**:
+1. Increase pod memory from 4GB to 8GB minimum
+2. Add JVM heap dump on OOM for analysis
+3. Review application logs for memory-related errors
+
+**Short-term**:
+1. Profile application for memory leaks
+2. Increase database connection pool from 20 to 100
+3. Implement circuit breakers for user-data endpoints
+4. Add memory-based graceful degradation
+
+**Long-term**:
+1. Refactor session management (consider Redis)
+2. Implement pagination for large result sets
+3. Add caching layer for frequently accessed data
+4. Scale to 40-50 pods for production readiness
+
+### Safe Operating Capacity
+- Current: <500 users (with issues)
+- Target (after fixes): 10,000+ users
+```
+
+### Best Practices
+
+1. **Always collect both Grafana and New Relic data** - Infrastructure metrics alone don't show application bottlenecks
+2. **Cross-reference timestamps** - Correlate spikes across metrics
+3. **Look for patterns** - Does issue affect all endpoints or specific ones?
+4. **Calculate ratios** - Memory per request, CPU per transaction
+5. **Compare iterations** - How do metrics change with load increase?
+6. **Document clearly** - Future tests will reference this analysis
 
 ---
 
