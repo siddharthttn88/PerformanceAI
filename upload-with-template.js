@@ -126,12 +126,12 @@ function toIST(isoStr) {
   const dt = new Date(isoStr);
   const istTime = new Date(dt.getTime() + (5.5 * 60 * 60 * 1000));
   
-  const day = istTime.getDate();
-  const month = istTime.getMonth() + 1;
-  const year = istTime.getFullYear();
-  let hours = istTime.getHours();
-  const minutes = String(istTime.getMinutes()).padStart(2, '0');
-  const seconds = String(istTime.getSeconds()).padStart(2, '0');
+  const day = istTime.getUTCDate();
+  const month = istTime.getUTCMonth() + 1;
+  const year = istTime.getUTCFullYear();
+  let hours = istTime.getUTCHours();
+  const minutes = String(istTime.getUTCMinutes()).padStart(2, '0');
+  const seconds = String(istTime.getUTCSeconds()).padStart(2, '0');
   
   const ampm = hours >= 12 ? 'PM' : 'AM';
   hours = hours % 12 || 12;
