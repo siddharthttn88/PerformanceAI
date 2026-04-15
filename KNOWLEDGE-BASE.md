@@ -126,9 +126,23 @@ node jenkins-client.js status "Locust - Test Runner" <BUILD_NUMBER>
 - Which service was tested?
 - Google Sheet link for results?
 
+**Extract Test Duration & Wait:**
+```bash
+# Extract test duration from result.html
+node inspect-data.js "D:\PerformanceAI\Reports\result.html"
+# Output shows: duration="3 minutes" or "5 minutes" etc.
+
+# Wait 1 minute after test completion for metrics to stabilize
+Start-Sleep -Seconds 60
+```
+
 **Fetch from Grafana (Kubernetes Metrics):**
 ```bash
-node get-pod-metrics.js <service-name> 5
+# Use actual test duration (e.g., if test was 3 minutes, use 3)
+node get-pod-metrics.js <service-name> <DURATION_IN_MINUTES>
+
+# Example: For a 3-minute test
+node get-pod-metrics.js subscriber-event-service 3
 ```
 - Number of Pods (Running/Pending/Failed)
 - CPU Allocated & Utilization per pod
@@ -139,7 +153,11 @@ node get-pod-metrics.js <service-name> 5
 
 **Fetch from New Relic (APM Metrics):**
 ```bash
-node get-apm-metrics.js <application-name> 5
+# Use actual test duration (e.g., if test was 3 minutes, use 3)
+node get-apm-metrics.js <application-name> <DURATION_IN_MINUTES>
+
+# Example: For a 3-minute test
+node get-apm-metrics.js subscriber-event 3
 ```
 - Application health status and Apdex score
 - Overall response time and throughput
@@ -209,7 +227,12 @@ node jenkins-client.js build "Locust - Test Runner" Master_IP=10.16.7.202 Users=
 node jenkins-client.js wait "Locust - Test Runner" 427
 # Report location: D:\PerformanceAI\Reports\result.html
 
-# 3. Fetch infrastructure metrics (using test timestamp for accuracy)
+# Extract test duration and wait 1 minute
+node inspect-data.js "D:\PerformanceAI\Reports\result.html"
+# Output: duration="5 minutes" (use 5 for metrics collection)
+Start-Sleep -Seconds 60
+
+# 3. Fetch infrastructure metrics (using actual test duration)
 node get-pod-metrics.js subscriber-event 5
 # Output: 20 pods, CPU: 35% avg, Memory: 60% avg, No restarts
 
@@ -266,6 +289,8 @@ Next Steps: Optimize database queries before scaling to 10K users"
 ```
 
 ### Notes
+- **Always wait 1 minute** after test completion before collecting metrics to allow stabilization
+- **Always use actual test duration** from result.html for metrics collection (not hardcoded values)
 - **Always collect both Grafana and New Relic metrics** - Infrastructure alone doesn't reveal application bottlenecks
 - Calculate RampUp as Users/60 for 1-minute ramp (or Users/RampupSeconds for custom durations)
 - Fetch infrastructure metrics using test start/end timestamps for accuracy
@@ -319,18 +344,24 @@ node jenkins-client.js wait "Locust - Test Runner" <BUILD_NUMBER>
 ##### 2.2 Fetch Test Report
 ```bash
 # Report automatically saved to: D:\PerformanceAI\Reports\result.html
-# Extract test metadata
+# Extract test metadata and duration
 node inspect-data.js "D:\PerformanceAI\Reports\result.html"
+# Output: duration="3 minutes" (note the duration value for Step 2.3)
+
+# Wait 1 minute after test completion for metrics to stabilize
+Start-Sleep -Seconds 60
 ```
 
 ##### 2.3 Collect Infrastructure Metrics
 ```bash
 # Fetch pod metrics from Grafana/Prometheus (Kubernetes infrastructure)
-node get-pod-metrics.js <SERVICE_NAME> 5
+# Use actual test duration extracted from result.html (e.g., 3 for 3 minutes)
+node get-pod-metrics.js <SERVICE_NAME> <DURATION_IN_MINUTES>
 # Returns: Pod count, CPU/Memory utilization, Network I/O, Pod status, Restarts
 
 # Fetch APM metrics from New Relic (Application performance)
-node get-apm-metrics.js <APPLICATION_NAME> 5
+# Use actual test duration extracted from result.html (e.g., 3 for 3 minutes)
+node get-apm-metrics.js <APPLICATION_NAME> <DURATION_IN_MINUTES>
 # Returns: Response times, Throughput, Error rates, Top transactions, Slowest endpoints
 ```
 
@@ -546,13 +577,16 @@ node jenkins-client.js wait "Locust - Test Runner" 426
 
 # Step 2: Fetch report (auto-saved)
 node inspect-data.js "D:\PerformanceAI\Reports\result.html"
-# Output: duration=3m, requests=15000, failures=0, avg_response=250ms
+# Output: duration="3 minutes", requests=15000, failures=0, avg_response=250ms
 
-# Step 3: Collect metrics
-node get-pod-metrics.js subscriber-event-service 5
+# Wait 1 minute for metrics to stabilize
+Start-Sleep -Seconds 60
+
+# Step 3: Collect metrics (using test duration: 3 minutes)
+node get-pod-metrics.js subscriber-event-service 3
 # Output: 20 pods, CPU: 15% avg, Memory: 45% avg, No restarts
 
-node get-apm-metrics.js subscriber-event 5
+node get-apm-metrics.js subscriber-event 3
 # Output: Response time: 250ms avg, Throughput: 5000 rpm, Error rate: 0%
 
 # Step 4: Check breaking point
@@ -579,13 +613,16 @@ node jenkins-client.js wait "Locust - Test Runner" 427
 
 # Step 2: Fetch report
 node inspect-data.js "D:\PerformanceAI\Reports\result.html"
-# Output: duration=3m, requests=75000, failures=120, avg_response=450ms
+# Output: duration="3 minutes", requests=75000, failures=120, avg_response=450ms
 
-# Step 3: Collect metrics
-node get-pod-metrics.js subscriber-event-service 5
+# Wait 1 minute for metrics to stabilize
+Start-Sleep -Seconds 60
+
+# Step 3: Collect metrics (using test duration: 3 minutes)
+node get-pod-metrics.js subscriber-event-service 3
 # Output: 20 pods, CPU: 35% avg, Memory: 60% avg, No restarts
 
-node get-apm-metrics.js subscriber-event 5
+node get-apm-metrics.js subscriber-event 3
 # Output: Response time: 450ms avg, Throughput: 25000 rpm, Error rate: 0.16%
 
 # Step 4: Check breaking point
@@ -612,13 +649,16 @@ node jenkins-client.js wait "Locust - Test Runner" 428
 
 # Step 2: Fetch report
 node inspect-data.js "D:\PerformanceAI\Reports\result.html"
-# Output: duration=3m, requests=150000, failures=2500, avg_response=1250ms
+# Output: duration="3 minutes", requests=150000, failures=2500, avg_response=1250ms
 
-# Step 3: Collect metrics
-node get-pod-metrics.js subscriber-event-service 5
+# Wait 1 minute for metrics to stabilize
+Start-Sleep -Seconds 60
+
+# Step 3: Collect metrics (using test duration: 3 minutes)
+node get-pod-metrics.js subscriber-event-service 3
 # Output: 20 pods, CPU: 75% avg, Memory: 82% avg, No restarts
 
-node get-apm-metrics.js subscriber-event 5
+node get-apm-metrics.js subscriber-event 3
 # Output: Response time: 1250ms avg, Throughput: 48000 rpm, Error rate: 1.67%
 
 # Step 4: Check breaking point
@@ -645,6 +685,11 @@ node upload-with-template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsO
 - Recommended: 3-5 minutes per iteration
 - Allows system to stabilize under load
 
+**Metrics collection timing**:
+- Always wait 1 minute after test completion before collecting metrics
+- Use actual test duration from result.html (not hardcoded values)
+- This ensures metrics accurately reflect test period
+
 **Wait time between iterations**:
 - Allow 2-3 minutes between tests for system cooldown
 - Ensures metrics reset to baseline
@@ -669,14 +714,20 @@ Comprehensive guide for analyzing Grafana (Kubernetes) and New Relic (APM) metri
 ### Data Collection Commands
 
 ```bash
-# Step 1: Fetch Kubernetes Infrastructure Metrics (Grafana/Prometheus)
-node get-pod-metrics.js <service-name> 5
-
-# Step 2: Fetch Application Performance Metrics (New Relic)
-node get-apm-metrics.js <application-name> 5
-
-# Step 3: Analyze HTML Report
+# Step 1: Analyze HTML Report to get test duration
 node inspect-data.js "D:\PerformanceAI\Reports\result.html"
+# Output: duration="3 minutes" (note this value)
+
+# Step 2: Wait 1 minute after test completion for metrics to stabilize
+Start-Sleep -Seconds 60
+
+# Step 3: Fetch Kubernetes Infrastructure Metrics (Grafana/Prometheus)
+# Use actual test duration (e.g., 3 for "3 minutes")
+node get-pod-metrics.js <service-name> <DURATION_IN_MINUTES>
+
+# Step 4: Fetch Application Performance Metrics (New Relic)
+# Use actual test duration (e.g., 3 for "3 minutes")
+node get-apm-metrics.js <application-name> <DURATION_IN_MINUTES>
 ```
 
 ### Metrics to Collect
