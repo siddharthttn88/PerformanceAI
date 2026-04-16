@@ -14,6 +14,7 @@ if (args.length < 2) {
   console.log('  --tps <number>         Target TPS');
   console.log('  --rampup <time>        Ramp-up time (default: "1 minute")');
   console.log('  --comment <text>       Test comment');
+  console.log('  --sheet <name>         Sheet name (default: "Load Test Results")');
   process.exit(1);
 }
 
@@ -26,6 +27,7 @@ const options = {
   tps: null,
   rampup: '1 minute',
   comment: '',
+  sheet: 'Load Test Results',
 };
 
 for (let i = 2; i < args.length; i++) {
@@ -37,6 +39,8 @@ for (let i = 2; i < args.length; i++) {
     options.rampup = args[++i];
   } else if (args[i] === '--comment' && i + 1 < args.length) {
     options.comment = args[++i];
+  } else if (args[i] === '--sheet' && i + 1 < args.length) {
+    options.sheet = args[++i];
   }
 }
 
@@ -156,12 +160,20 @@ const percMap = {};
 });
 
 // =========================
-// SLA CHECK (1 second = 1000ms)
+// BREAKING POINT CRITERIA CHECK
 // =========================
-const SLA_THRESHOLD = 1000;
-const hasFailures = apiStats.some(stat => stat.num_failures > 0);
+const SLA_THRESHOLD = 1000; // 1 second
+const ERROR_RATE_THRESHOLD = 5; // 5%
+
+// Calculate overall error rate
+const totalRequests = aggregated.num_requests || 0;
+const totalFailures = aggregated.num_failures || 0;
+const errorRate = totalRequests > 0 ? (totalFailures / totalRequests) * 100 : 0;
+
+// Check for breaking point criteria
+const highErrorRate = errorRate > ERROR_RATE_THRESHOLD;
 const slaViolations = apiStats.filter(stat => stat.avg_response_time > SLA_THRESHOLD);
-const testStatus = (hasFailures || slaViolations.length > 0) ? 'FAIL' : 'PASS';
+const testStatus = (highErrorRate || slaViolations.length > 0) ? 'FAIL' : 'PASS';
 
 console.log('\n📊 Detected from HTML Report:');
 console.log(`   Users: ${userCount ? userCount.toLocaleString() : 'N/A'}`);
@@ -169,15 +181,20 @@ console.log(`   Start: ${startTime}`);
 console.log(`   End: ${endTime}`);
 console.log(`   Duration: ${durationMinutes}m ${durationRemainingSeconds}s`);
 console.log(`   Total TPS: ${totalTPS}`);
+console.log(`   Error Rate: ${errorRate.toFixed(2)}%`);
 
 if (testStatus === 'FAIL') {
   console.log('\n⚠️  Auto-detected status: FAIL');
-  if (hasFailures) {
-    console.log('   - Reason: Request failures detected');
+  if (highErrorRate) {
+    console.log(`   - Reason: High error rate ${errorRate.toFixed(2)}% (threshold: ${ERROR_RATE_THRESHOLD}%)`);
   }
   if (slaViolations.length > 0) {
-    console.log('   - SLA violations:', slaViolations.map(s => s.name).join(', '));
+    console.log('   - SLA violations:', slaViolations.map(s => `${s.name} (${Math.round(s.avg_response_time)}ms)`).join(', '));
   }
+} else {
+  console.log(`\n✅ Auto-detected status: PASS`);
+  console.log(`   - Error rate: ${errorRate.toFixed(2)}% (<${ERROR_RATE_THRESHOLD}%)`);
+  console.log(`   - Response times: All APIs <${SLA_THRESHOLD}ms`);
 }
 
 // =========================
@@ -190,7 +207,7 @@ if (testStatus === 'FAIL') {
   });
 
   const sheets = google.sheets({ version: 'v4', auth });
-  const sheetName = 'Load Test Results';
+  const sheetName = options.sheet;
 
   // Get or create sheet
   const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
