@@ -172,8 +172,15 @@ const errorRate = totalRequests > 0 ? (totalFailures / totalRequests) * 100 : 0;
 
 // Check for breaking point criteria
 const highErrorRate = errorRate > ERROR_RATE_THRESHOLD;
-const slaViolations = apiStats.filter(stat => stat.avg_response_time > SLA_THRESHOLD);
-const testStatus = (highErrorRate || slaViolations.length > 0) ? 'FAIL' : 'PASS';
+
+// Check both average AND P95 response times
+const avgSlaViolations = apiStats.filter(stat => stat.avg_response_time > SLA_THRESHOLD);
+const p95Violations = apiStats.filter(stat => {
+  const perc = percMap[stat.name];
+  return perc && perc['0.95'] && perc['0.95'] > SLA_THRESHOLD;
+});
+
+const testStatus = (highErrorRate || avgSlaViolations.length > 0 || p95Violations.length > 0) ? 'FAIL' : 'PASS';
 
 console.log('\n📊 Detected from HTML Report:');
 console.log(`   Users: ${userCount ? userCount.toLocaleString() : 'N/A'}`);
@@ -188,13 +195,19 @@ if (testStatus === 'FAIL') {
   if (highErrorRate) {
     console.log(`   - Reason: High error rate ${errorRate.toFixed(2)}% (threshold: ${ERROR_RATE_THRESHOLD}%)`);
   }
-  if (slaViolations.length > 0) {
-    console.log('   - SLA violations:', slaViolations.map(s => `${s.name} (${Math.round(s.avg_response_time)}ms)`).join(', '));
+  if (avgSlaViolations.length > 0) {
+    console.log('   - Avg SLA violations:', avgSlaViolations.map(s => `${s.name} (${Math.round(s.avg_response_time)}ms)`).join(', '));
+  }
+  if (p95Violations.length > 0) {
+    console.log('   - P95 SLA violations:', p95Violations.map(s => {
+      const p95 = percMap[s.name]['0.95'];
+      return `${s.name} (P95: ${Math.round(p95)}ms)`;
+    }).join(', '));
   }
 } else {
   console.log(`\n✅ Auto-detected status: PASS`);
   console.log(`   - Error rate: ${errorRate.toFixed(2)}% (<${ERROR_RATE_THRESHOLD}%)`);
-  console.log(`   - Response times: All APIs <${SLA_THRESHOLD}ms`);
+  console.log(`   - Response times: All APIs avg & P95 <${SLA_THRESHOLD}ms`);
 }
 
 // =========================
