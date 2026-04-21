@@ -22,7 +22,7 @@ node upload-with-template.js "<HTML_REPORT_PATH>" "<SPREADSHEET_ID>" --users <US
 - **Infrastructure Config (Add to Comments section)**: 
   - Ask user which service is being tested
   - Fetch correct service name from Grafana dashboard or New Relic
-  - Collect: Number of pods, CPU allocated, Memory allocated & there utilization
+  - Collect: Number of pods, CPU allocated, Memory allocated & there MAX & AVG utilization
   - Use test timestamp from HTML report to filter metrics from Grafana/New Relic
   - Include this info in the `--comment` parameter when running the command
 - Format includes:
