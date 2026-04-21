@@ -6,48 +6,103 @@ This document contains predefined commands and their usage rules for performance
 
 ## 1. Append Load Test Results to Google Sheet
 
-### Command
+### Primary Command (Recommended - Enhanced Locust Template)
+```bash
+node upload-with-Locust_Template.js "<HTML_REPORT_PATH>" "<SPREADSHEET_ID>" --users <USER_COUNT> --rampup "<RAMPUP_TIME>" --targettps <TPS> --comment "<COMMENT_TEXT>" [--timezone <IST|local>]
+```
+
+**New Features in Locust Template:**
+- ✅ **Merged Comment Cell** - Comment spans columns B-K for better readability
+- ✅ **Fixed Name Column Width** - 400px for consistent layout
+- ✅ **Right-Aligned Numbers** - Average (ms), RPS, Failures/s columns
+- ✅ **Duration Parsing** - Handles both string and numeric duration formats
+- ✅ **Timezone Support** - Choose between IST or local timezone
+- ✅ **Auto Sheet Creation** - Creates sheet if it doesn't exist
+- ✅ **Auto Column Resize** - All columns automatically sized
+- ✅ **Bold Summary Labels** - Better visual hierarchy
+- ✅ **Enhanced Logging** - Detailed metrics summary display
+- ✅ **Better Error Handling** - Stack traces for debugging
+
+### Alternative Command (Legacy Template)
 ```bash
 node upload-with-template.js "<HTML_REPORT_PATH>" "<SPREADSHEET_ID>" --users <USER_COUNT> --rampup "<RAMPUP_TIME>" --comment "<COMMENT_TEXT>"
 ```
 
-### Rules
+Use the legacy template if you need the original 3-column summary format without merged cells.
+
+### Rules (Both Templates)
 - **Leave 6 blank lines** beneath previous test results before appending new results
-- **Always use result format** from `template.txt`
-- **TPS Calculation**: TPS = Users / Ramp up (displays in Load cell)
-- **Test Time**: Always extract start time, end time, and duration from `result.html` (auto-detected by script)
+- **TPS Calculation**: TPS = Users / 60 (for 1-minute ramp-up)
+- **Test Time**: Always extracted from `result.html` (auto-detected by script)
   - Script automatically parses test timestamps from HTML report
-  - Timezone conversion: UTC → IST (GMT+5:30)
+  - Timezone conversion: UTC → IST (GMT+5:30) or local timezone
   - Format: "M/D/YYYY, H:MM:SS AM/PM - H:MM:SS AM/PM (X minutes Y seconds)"
 - **Infrastructure Config (Add to Comments section)**: 
   - Ask user which service is being tested
   - Fetch correct service name from Grafana dashboard or New Relic
-  - Collect: Number of pods, CPU allocated, Memory allocated & there MAX & AVG utilization
+  - Collect: Number of pods, CPU allocated, Memory allocated & their MAX & AVG utilization
   - Use test timestamp from HTML report to filter metrics from Grafana/New Relic
   - Include this info in the `--comment` parameter when running the command
-- Format includes:
-  - Summary table (Load, Test Time, Test Status, Comment)
-  - Data table with 11 columns (API Name, Method, Total Requests, Total Failures, Avg, Min, Max, Median, 90%, 95%, 99%)
+- **Format includes**:
+  - Summary table (Load, Test Time, Test Status, Comment with merged cell)
+  - Data table with 11 columns (Type, Name, # Requests, # Fails, Average (ms), Min (ms), Max (ms), RPS, Failures/s, 90%ile (ms), 95%ile (ms))
 
-### Example
+### Example (Locust Template - Recommended)
 ```bash
-node upload-with-template.js "D:\AstroPayTV\PayTV\reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 80000 --rampup "1 minute" --comment "PayTV API Load Test - 10 endpoints tested\nTotal failures: 250 (0.05%)\nMax response time: 10,282ms"
+node upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 40000 --rampup "4 minutes" --targettps 667 --timezone "local" --comment "Load Test Analysis - 40K Users Breaking Point Test
+
+Test Configuration:
+- User Load: 40,000 concurrent users
+- Target TPS: 667 | Actual TPS: 3,607
+- Ramp-up: 4 minutes
+- Duration: 7 minutes 1 second
+
+Test Results: FAIL
+
+Breaking Point Analysis:
+✗ Error Rate: 11.38% (Threshold: 5%)
+✗ Avg Response Time: 2,733ms (Threshold: 1,000ms)
+✗ 12 of 13 endpoints exceeded SLA
+
+Infrastructure:
+- Service: subscriber-event-service
+- Pods: 10 (8 cores CPU, 8GB RAM each)
+- Monitoring: New Relic enabled
+
+Conclusion:
+40K users represents the breaking point.
+Recommended maximum: 30K users."
+```
+
+### Example (Legacy Template)
+```bash
+node upload-with-template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 80000 --rampup "1 minute" --comment "PayTV API Load Test - 10 endpoints tested\nTotal failures: 250 (0.05%)\nMax response time: 10,282ms"
 ```
 
 ### Parameters
-- `<HTML_REPORT_PATH>`: Path to Locust HTML report file (e.g., `D:\AstroPayTV\PayTV\reports\result.html`) or fetch from Reports folder
+
+**Locust Template (upload-with-Locust_Template.js):**
+- `<HTML_REPORT_PATH>`: Path to Locust HTML report file (e.g., `D:\PerformanceAI\Reports\result.html`)
 - `<SPREADSHEET_ID>`: Google Sheet ID from the URL
-- `--users`: Actual user count used in the test (required - used to calculate TPS as Users/60)
-- `--rampup`: Ramp-up time (e.g., "1 minute", "30 seconds")
-- `--comment`: Multi-line comment with test details (use `\n` for line breaks)
+- `--users <count>`: Actual user count used in the test (required)
+- `--rampup <time>`: Ramp-up time (e.g., "1 minute", "4 minutes")
+- `--targettps <tps>`: Target TPS for display (optional, defaults to users/60)
+- `--sheet <name>`: Sheet name (optional, uses first sheet if not specified)
+- `--comment <text>`: Multi-line comment with test details (use `\n` for line breaks)
+- `--timezone <tz>`: Timezone for timestamps - "IST" or "local" (default: local)
+- `--creds <path>`: Credentials file path (default: credentials.json)
+
+**Legacy Template (upload-with-template.js):**
+- Same parameters except `--targettps` and `--timezone` are not available
 
 ### Notes
 - **Script automatically extracts all timing information from result.html** - no manual time input needed
 - Test start time, end time, and duration are parsed directly from the HTML report
 - Duration is parsed from HTML (format: "X minutes and Y seconds")
-- Timezone conversion: UTC → IST (GMT+5:30) automatically applied
-- Status auto-determined based on failures (Pass/Fail)
+- Timezone conversion options: IST (GMT+5:30) or local timezone
+- Status auto-determined based on SLA criteria (>1000ms response time or >5% error rate)
 - Do not manually specify test times - always let the script read from result.html
+- **Merged comment cell** in Locust template allows detailed multi-line analysis without column width issues
 
 ---
 
@@ -267,8 +322,10 @@ Issues Detected:
 
 #### Step 5: Upload to Google Sheet
 ```bash
-node upload-with-template.js "<HTML_REPORT_PATH>" "<SPREADSHEET_ID>" --users <USER_COUNT> --rampup "<RAMPUP_TIME>" --comment "<COMMENT_TEXT_WITH_INFRA_METRICS>"
+node upload-with-Locust_Template.js "<HTML_REPORT_PATH>" "<SPREADSHEET_ID>" --users <USER_COUNT> --rampup "<RAMPUP_TIME>" --targettps <TPS> --comment "<COMMENT_TEXT_WITH_INFRA_METRICS>"
 ```
+
+**Note**: Use `upload-with-template.js` (legacy) if you prefer the original 3-column format without merged cells.
 
 ### Example Complete Workflow
 ```bash
@@ -298,7 +355,7 @@ node get-apm-metrics.js subscriber-event 5
 # - Correlate error patterns with infrastructure events
 
 # 5. Upload results with comprehensive analysis
-node upload-with-template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 5000 --rampup "1 minute" --comment "Subscriber Event Service Load Test
+node upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 5000 --rampup "1 minute" --targettps 83 --comment "Subscriber Event Service Load Test
 
 Infrastructure (Kubernetes):
 - Pods: 20 (all running, no restarts)
@@ -595,8 +652,10 @@ Recommendations:
 
 ##### 2.6 Upload Results to Google Sheet
 ```bash
-node upload-with-template.js "D:\PerformanceAI\Reports\result.html" "<SPREADSHEET_ID>" --users <USER_COUNT> --rampup "<RAMPUP_TIME>" --comment "<PREPARED_COMMENT>"
+node upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "<SPREADSHEET_ID>" --users <USER_COUNT> --rampup "<RAMPUP_TIME>" --targettps <TPS> --comment "<PREPARED_COMMENT>"
 ```
+
+**Legacy Option**: Use `upload-with-template.js` for the original format without merged comment cells.
 
 #### Step 3: Decision Logic
 ```
@@ -650,7 +709,7 @@ node get-apm-metrics.js subscriber-event 3
 # Decision: CONTINUE
 
 # Step 5: Upload results
-node upload-with-template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 1000 --rampup "60 seconds" --comment "✅ Breaking Point Test - Iteration 1`nService: subscriber-event-service`nLoad: 1,000 users`n`nInfrastructure:`n- Pods: 20`n- CPU: 4 cores (15% avg)`n- Memory: 4 GB (45% avg)`n`nTest Results:`n- Total requests: 15,000`n- Total failures: 0 (0%)`n- Avg response time: 250ms`n- P95: 320ms`n- Slowest endpoint: /api/get-profile (280ms avg)`n`nStatus: ✅ PASS - All criteria met`nNext: Continue to iteration 2"
+node upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 1000 --rampup "60 seconds" --targettps 17 --comment "✅ Breaking Point Test - Iteration 1`nService: subscriber-event-service`nLoad: 1,000 users`n`nInfrastructure:`n- Pods: 20`n- CPU: 4 cores (15% avg)`n- Memory: 4 GB (45% avg)`n`nTest Results:`n- Total requests: 15,000`n- Total failures: 0 (0%)`n- Avg response time: 250ms`n- P95: 320ms`n- Slowest endpoint: /api/get-profile (280ms avg)`n`nStatus: ✅ PASS - All criteria met`nNext: Continue to iteration 2"
 
 # Wait 3 minutes for cooldown
 Start-Sleep -Seconds 180
@@ -686,7 +745,7 @@ node get-apm-metrics.js subscriber-event 3
 # Decision: CONTINUE
 
 # Step 5: Upload results
-node upload-with-template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 5000 --rampup "60 seconds" --comment "✅ Breaking Point Test - Iteration 2`nService: subscriber-event-service`nLoad: 5,000 users`n`nInfrastructure:`n- Pods: 20`n- CPU: 4 cores (35% avg)`n- Memory: 4 GB (60% avg)`n`nTest Results:`n- Total requests: 75,000`n- Total failures: 120 (0.16%)`n- Avg response time: 450ms`n- P95: 670ms`n- Slowest endpoint: /api/get-history (820ms avg)`n`nStatus: ✅ PASS - All criteria met`nNext: Continue to iteration 3"
+node upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 5000 --rampup "60 seconds" --targettps 84 --comment "✅ Breaking Point Test - Iteration 2`nService: subscriber-event-service`nLoad: 5,000 users`n`nInfrastructure:`n- Pods: 20`n- CPU: 4 cores (35% avg)`n- Memory: 4 GB (60% avg)`n`nTest Results:`n- Total requests: 75,000`n- Total failures: 120 (0.16%)`n- Avg response time: 450ms`n- P95: 670ms`n- Slowest endpoint: /api/get-history (820ms avg)`n`nStatus: ✅ PASS - All criteria met`nNext: Continue to iteration 3"
 
 # Wait 3 minutes for cooldown
 Start-Sleep -Seconds 180
@@ -722,7 +781,7 @@ node get-apm-metrics.js subscriber-event 3
 # Decision: BREAKING POINT REACHED - STOP
 
 # Step 5: Upload final breaking point report
-node upload-with-template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 10000 --rampup "60 seconds" --comment "🔴 BREAKING POINT TEST - Final Iteration 3`n`nService: subscriber-event-service`nLoad: 10,000 users`n`nBreaking Point Summary:`n- Maximum Stable Load: 5,000 users`n- Breaking Point Load: 10,000 users`n- Criteria Met:`n  * Response Time: 1250ms (Threshold: 1000ms) 🔴`n  * Memory: 82% (Threshold: 80%) 🔴`n`nInfrastructure at Breaking Point:`n- Pods: 20`n- CPU: 4 cores (75% utilized)`n- Memory: 4 GB (82% utilized)`n`nSlowest Endpoints:`n1. /api/get-history: 1850ms avg (1200 failures)`n2. /api/search-content: 1450ms avg (800 failures)`n3. /api/get-recommendations: 1150ms avg (500 failures)`n`nTest Progression:`n- Iteration 1: 1,000 users - ✅ PASS (250ms, CPU 15%, Mem 45%)`n- Iteration 2: 5,000 users - ✅ PASS (450ms, CPU 35%, Mem 60%)`n- Iteration 3: 10,000 users - 🔴 FAIL (1250ms, CPU 75%, Mem 82%)`n`nRecommendations:`n- Maximum safe load: 8,000 users (80% of breaking point)`n- Bottleneck endpoint: /api/get-history (optimize database query first)`n- Infrastructure bottleneck: Memory pressure causing GC overhead`n- Actions: 1) Optimize /api/get-history query, 2) Increase memory to 6GB per pod, or 3) Scale to 30 pods"
+node upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 10000 --rampup "60 seconds" --targettps 167 --comment "🔴 BREAKING POINT TEST - Final Iteration 3`n`nService: subscriber-event-service`nLoad: 10,000 users`n`nBreaking Point Summary:`n- Maximum Stable Load: 5,000 users`n- Breaking Point Load: 10,000 users`n- Criteria Met:`n  * Response Time: 1250ms (Threshold: 1000ms) 🔴`n  * Memory: 82% (Threshold: 80%) 🔴`n`nInfrastructure at Breaking Point:`n- Pods: 20`n- CPU: 4 cores (75% utilized)`n- Memory: 4 GB (82% utilized)`n`nSlowest Endpoints:`n1. /api/get-history: 1850ms avg (1200 failures)`n2. /api/search-content: 1450ms avg (800 failures)`n3. /api/get-recommendations: 1150ms avg (500 failures)`n`nTest Progression:`n- Iteration 1: 1,000 users - ✅ PASS (250ms, CPU 15%, Mem 45%)`n- Iteration 2: 5,000 users - ✅ PASS (450ms, CPU 35%, Mem 60%)`n- Iteration 3: 10,000 users - 🔴 FAIL (1250ms, CPU 75%, Mem 82%)`n`nRecommendations:`n- Maximum safe load: 8,000 users (80% of breaking point)`n- Bottleneck endpoint: /api/get-history (optimize database query first)`n- Infrastructure bottleneck: Memory pressure causing GC overhead`n- Actions: 1) Optimize /api/get-history query, 2) Increase memory to 6GB per pod, or 3) Scale to 30 pods"
 
 # Test complete - breaking point identified at 10,000 users
 ```

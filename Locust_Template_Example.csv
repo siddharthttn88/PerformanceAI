@@ -1,0 +1,33 @@
+
+
+
+Load,10000 Users (166TPS),Total TPS on service = 874
+Test Time,"4/16/2026, 11:45:18 AM - 4/16/2026, 11:50:18 AM (5 minutes)",,RampUp - 1 min
+Test Status ,PASS
+Comment ,"Run on load env 
+Executed from 31 servers
+Mock server pods = 15  , subscriber event and producer min pods = =10 (4 core cpu , 4 gb ) , subscriber-activity-producre pods = 1 ,  config service =8 ,
+Started with 20 pods
+Min = Max , NEWRELIC = Enabled
+
+Language filter disable
+New relic enable
+
+After implement REDIS 
+After Apply limit in get continue watch to 100 at cassandra
+
+Operator label enabled"
+Type,Name,# Requests,# Fails,Average (ms),Min (ms),Max (ms),RPS,Failures/s,90%ile (ms),95%ile (ms)
+POST,Add_To_ContinueWatch,215707,32,46.46,19,1049,513.37,0.08,69,110
+POST,Add_to_Favourite,19204,3738,3299.74,20,10295,45.7,8.9,10000,10000
+DELETE,Delete_ContinueWatch,9659,1840,3203.64,25,10266,22.99,4.38,10000,10000
+GET,Get_ContinueWatch,215749,47340,4062.82,20,10371,513.47,112.67,10000,10000
+GET,Get_Continue_Watch_Boxset_Content,38948,7407,3241.14,25,10320,92.69,17.63,10000,10000
+GET,Get_Favourite_Channels,56563,10578,3184.75,21,10282,134.62,25.18,10000,10000
+GET,Get_Favourite_List,185980,37257,3527.01,21,10320,442.62,88.67,10000,10000
+GET,Get_Recent_Continue_Watch_Detailed API,96982,18250,3232.49,19,10285,230.81,43.43,10000,10000
+GET,Get_Watch_Again_NEW API,198821,37389,3258.13,19,10398,473.19,88.98,10000,10000
+POST,Post_Progress API,204352,39019,3385.6,20,10367,486.35,92.86,10000,10000
+GET,Recent,210188,40268,3375.8,21,10323,500.24,95.84,10000,10000
+DELETE,Remove_Favourite,17438,770,3793.17,22,29096,41.5,1.83,12000,19000
+POST,post_Last_Tuned_Channel,37741,7981,3222.3,20,10344,89.82,18.99,10000,10000

@@ -272,6 +272,84 @@ node jenkins-client.js build-wait deployment BRANCH=develop REGION=us-east-1
 
 Parse Locust HTML reports and automatically export to Google Sheets with formatting and SLA analysis.
 
+##### **Option 1: Enhanced Locust Template (Recommended)**
+
+Use `upload-with-Locust_Template.js` for the best experience with advanced features.
+
+**Features:**
+- ✅ **Merged Comment Cell** - Comment spans columns B-K for detailed analysis
+- ✅ **Fixed Name Column Width** - 400px for consistent layout
+- ✅ **Right-Aligned Numbers** - Average (ms), RPS, Failures/s columns
+- ✅ **Duration Parsing** - Handles both string and numeric formats
+- ✅ **Timezone Support** - Choose between IST or local timezone
+- ✅ **Auto Sheet Creation** - Creates sheet if it doesn't exist
+- ✅ **Auto Column Resize** - All columns automatically sized
+- ✅ **Bold Summary Labels** - Better visual hierarchy
+- ✅ **Auto SLA check** - 1-second threshold with detailed violation reports
+- ✅ **Auto PASS/FAIL detection** - Based on response times and error rates
+- ✅ **Enhanced Logging** - Detailed metrics summary display
+- ✅ **P90/P95 percentile tracking** - Complete performance metrics
+
+```bash
+# Install required package first (one-time)
+npm install googleapis
+
+# Basic usage (recommended)
+node upload-with-Locust_Template.js result.html <spreadsheet-id> \
+  --users 40000 \
+  --rampup "4 minutes" \
+  --targettps 667 \
+  --sheet "Load Test Results"
+
+# With detailed comment and IST timezone
+node upload-with-Locust_Template.js result.html <spreadsheet-id> \
+  --users 50000 \
+  --rampup "1 minute" \
+  --targettps 833 \
+  --timezone "IST" \
+  --comment "Breaking Point Test - Production Environment
+
+Test Configuration:
+- User Load: 50,000 concurrent users
+- Target TPS: 833 | Actual TPS: 1,826
+- Duration: 5 minutes
+
+Infrastructure:
+- Service: subscriber-event-service
+- Pods: 20 (8 cores, 8GB RAM each)
+- CPU: 65% avg utilization
+- Memory: 72% avg utilization
+
+Analysis:
+All endpoints within SLA (<1000ms)
+No breaking point reached
+Ready for production scale"
+
+# Minimal usage (auto-calculates TPS from users/60)
+node upload-with-Locust_Template.js result.html <spreadsheet-id> \
+  --users 100000 \
+  --rampup "2 minutes"
+
+# With custom credentials file
+node upload-with-Locust_Template.js result.html <spreadsheet-id> \
+  --users 100000 \
+  --rampup "2 minutes" \
+  --creds my-service-account.json
+```
+
+**Command Line Options:**
+- `--users <number>` - Total users in test (required)
+- `--rampup <time>` - Ramp-up time (e.g., "1 minute", "4 minutes")
+- `--targettps <number>` - Target TPS (optional, defaults to users/60)
+- `--sheet <name>` - Sheet name (optional, uses first sheet if not specified)
+- `--comment <text>` - Multi-line test details (supports `\n` line breaks)
+- `--timezone <IST|local>` - Timezone for timestamps (default: local)
+- `--creds <file>` - Custom credentials file (default: credentials.json)
+
+##### **Option 2: Legacy Template**
+
+Use `upload-with-template.js` if you prefer the original 3-column format without merged cells.
+
 **Features:**
 - ✅ Auto SLA check (1-second threshold)
 - ✅ Auto PASS/FAIL detection based on response times and failures
@@ -281,22 +359,36 @@ Parse Locust HTML reports and automatically export to Google Sheets with formatt
 - ✅ Comprehensive test metadata
 
 ```bash
-# Install required package first
-npm install googleapis
+# Basic usage
+node upload-with-template.js result.html <spreadsheet-id> \
+  --users 50000 \
+  --rampup "1 minute" \
+  --comment "Load test on production environment"
 
+# With manual status
+node upload-with-template.js result.html <spreadsheet-id> \
+  --users 150000 \
+  --rampup "2 minutes" \
+  --comment "Multi-line comment\nWith detailed notes"
+```
+
+**Command Line Options:**
+- `--users <number>` - Total users in test (required)
+- `--rampup <time>` - Ramp-up time (e.g., "1 minute", "30 seconds")
+- `--comment <text>` - Test comments/notes (supports `\n`)
+- `--sheet <name>` - Sheet name (optional)
+- `--creds <file>` - Custom credentials file (default: credentials.json)
+
+##### **Option 3: Original Locust Script (locust-to-gsheet.js)**
+
+The original `locust-to-gsheet.js` script is also available for compatibility.
+
+```bash
 # Basic usage (auto-detect PASS/FAIL based on 1sec SLA)
 node locust-to-gsheet.js result.html <spreadsheet-id> \
   --users 50000 \
   --tps 833 \
   --rampup "1 minute"
-
-# With manual status and comment
-node locust-to-gsheet.js result.html <spreadsheet-id> \
-  --users 150000 \
-  --tps 2500 \
-  --status PASS \
-  --comment "Load test on production environment" \
-  --rampup "2 minutes"
 
 # Minimal usage (auto-calculates everything from HTML)
 node locust-to-gsheet.js result.html <spreadsheet-id>
@@ -308,50 +400,81 @@ node locust-to-gsheet.js result.html <spreadsheet-id> \
   --tps 1500
 ```
 
-**Setup (One-time):**
-1. Go to https://console.cloud.google.com
-2. Create a project → Enable "Google Sheets API"
-3. Create a Service Account → download JSON key → save as `credentials.json`
-4. Share your Google Sheet with the service-account email (Editor role)
+**Setup (One-time for all upload scripts):**
+1. Install googleapis: `npm install googleapis`
+2. Go to https://console.cloud.google.com
+3. Create a project → Enable "Google Sheets API"
+4. Create a Service Account → download JSON key → save as `credentials.json`
+5. Share your Google Sheet with the service-account email (Editor role)
 
-**Command Line Options:**
-- `--users <number>` - Total users in test (e.g., 50000)
-- `--tps <number>` - Target TPS (e.g., 833)
-- `--rampup <time>` - Ramp-up time (e.g., "1 minute", "30 seconds")
-- `--status <PASS|FAIL>` - Manual override (auto-detected if not provided)
-- `--comment <text>` - Test comments/notes
-- `--creds <file>` - Custom credentials file (default: credentials.json)
+**Comparison of Upload Options:**
 
-**Auto SLA Detection:**
+| Feature | Locust Template (Recommended) | Legacy Template | Original (locust-to-gsheet) |
+|---------|-------------------------------|-----------------|----------------------------|
+| Merged Comment Cell | ✅ Yes (B-K columns) | ❌ No | ❌ No |
+| Fixed Column Width | ✅ 400px for Name | ❌ Auto | ❌ Auto |
+| Right-Aligned Numbers | ✅ Yes | ⚠️ Partial | ⚠️ Partial |
+| Timezone Options | ✅ IST/Local | ✅ IST only | ✅ IST only |
+| Auto Sheet Creation | ✅ Yes | ✅ Yes | ❌ No |
+| Duration Parsing | ✅ Advanced | ✅ Advanced | ⚠️ Basic |
+| Bold Summary Labels | ✅ Yes | ⚠️ Partial | ❌ No |
+| Enhanced Logging | ✅ Detailed | ✅ Standard | ⚠️ Basic |
+| Auto TPS Calculation | ✅ Yes (users/60) | ✅ Yes (users/60) | ❌ Manual |
+| Target TPS Display | ✅ Yes (--targettps) | ❌ No | ✅ Yes (--tps) |
+| Error Stack Traces | ✅ Yes | ❌ No | ❌ No |
+
+**Auto SLA Detection (All Options):**
 - **SLA Threshold**: 1 second (1000ms)
-- **FAIL** if any API average > 1000ms OR has failures
-- **PASS** if all APIs within SLA and no failures
+- **FAIL** if any API average > 1000ms OR error rate >5%
+- **PASS** if all APIs within SLA and error rate <5%
 - Shows which APIs exceeded SLA in console
 
-**Output Format in Google Sheets:**
-- **Load**: User count + target TPS | **Total TPS**: Actual measured TPS (highlighted)
+**Output Format in Google Sheets (Locust Template):**
+- **Load**: User count + target TPS | **Total TPS**: Actual measured TPS (yellow highlight, bold)
 - **Test Time**: Start - End (duration) | **Ramp-up**: Time
-- **Test Status**: PASS/FAIL (color-coded: green=PASS, red=FAIL)
-- **Comment**: Custom test notes
-- **API Metrics Table**: Type, Name, Requests, Fails, Avg(ms), Min(ms), Max(ms), RPS, Failures/s, P90(ms), P95(ms)
+- **Test Status**: PASS/FAIL (color-coded: green=PASS, red=FAIL, bold)
+- **Comment**: Multi-line detailed analysis (merged cell spanning columns B-K)
+- **API Metrics Table**: Type, Name, # Requests, # Fails, Average (ms), Min (ms), Max (ms), RPS, Failures/s, 90%ile (ms), 95%ile (ms)
 
-**Formatting Applied:**
+**Enhanced Formatting (Locust Template):**
+- **Merged comment cell** across 10 columns for detailed multi-line analysis
+- **Fixed Name column width** at 400px for consistent layout
+- **Right-aligned numbers** in Average (ms), RPS, and Failures/s columns
+- **Bold summary labels** in column A
 - Borders around all cells
 - Green background for PASS, red for FAIL
-- Orange highlight for Total TPS value
+- Yellow highlight for Total TPS value
 - Bold gray header row for metrics table
-- Auto-resized columns
+- Auto-resized columns (except Name column)
 
-**Example Output:**
+**Example Output (Locust Template):**
 ```
-Load: 50,000 Users (833 TPS)    |  Total TPS on Service = 1826 (orange, bold)
-Test Time: 4/1/2026, 12:42 PM - 12:45 PM (3 minutes)  |  Ramp-up: 1 minute
+Load: 40,000 Users (667 TPS)  |  Total TPS on Service = 3607 (yellow, bold)
+Test Time: 4/17/2026, 12:18 PM - 12:25 PM (7 min 1 sec)  |  RampUp - 4 minutes
 Test Status: FAIL (red, bold)
-Comment: Manual test comment
+Comment: (Merged cell B-K with plenty of horizontal space)
+  Load Test Analysis - 40K Users Breaking Point Test
+  
+  Test Configuration:
+  - User Load: 40,000 concurrent users
+  - Target TPS: 667 | Actual TPS: 3,607
+  - Duration: 7 minutes 1 second
+  
+  Breaking Point Analysis:
+  ✗ Error Rate: 11.38% (Threshold: 5%)
+  ✗ Avg Response Time: 2,733ms (Threshold: 1,000ms)
+  
+  Infrastructure:
+  - Service: subscriber-event-service
+  - Pods: 10 (8 cores CPU, 8GB RAM each)
+  
+  Conclusion:
+  40K users represents the breaking point.
+  Recommended maximum: 30K users.
 
-Type | API Name              | Requests | Fails | Avg(ms) | Min(ms) | Max(ms) | RPS   | Failures/s | P90(ms) | P95(ms)
-POST | LA-start_watching     | 137856   | 53205 | 1583    | 128     | 2713    | 765   | 3.2        | 1700    | 1800
-POST | LA-stop_watching      | 109697   | 27780 | 1575    | 128     | 2518    | 609   | 2.8        | 1600    | 1700
+Type | Name                          | # Requests | # Fails | Average (ms) | Min (ms) | Max (ms) | RPS    | Failures/s | 90%ile (ms) | 95%ile (ms)
+POST | Add_To_ContinueWatch          | 216115     | 32      | 45.50        | 20       | 412      | 514.32 | 0.08       | 41          | 96
+POST | Add_to_Favourite              | 19057      | 2354    | 2839.64      | 22       | 10143    | 45.35  | 5.60       | 190         | 10000
 ...
 ```
 
@@ -819,10 +942,45 @@ Query historical metrics for specific time ranges:
 - Network I/O
 - Restart detection
 
-### 6. config.json
+### 6. upload-with-Locust_Template.js **(Recommended)**
+Enhanced Locust report uploader to Google Sheets:
+- Merged comment cell (columns B-K) for detailed analysis
+- Fixed Name column width (400px)
+- Right-aligned numeric columns
+- Timezone support (IST/Local)
+- Auto sheet creation
+- Bold summary labels
+- Enhanced logging and error handling
+- Auto TPS calculation
+- Duration parsing (string/numeric formats)
+
+### 7. upload-with-template.js (Legacy)
+Original Locust report uploader to Google Sheets:
+- Traditional 3-column summary format
+- IST timezone conversion
+- Auto SLA detection
+- Formatted output with borders and colors
+- Compatible with historical data
+
+### 8. read-gsheet.js
+Read data from Google Sheets:
+- JSON or CSV output formats
+- Range selection support
+- Authentication with credentials.json
+- Used for verification and data retrieval
+
+### 9. jenkins-client.js
+Jenkins CI/CD integration:
+- List and trigger jobs
+- Monitor build status
+- Get console output
+- Parameterized builds
+- Wait for completion
+
+### 10. config.json
 Configuration file for Grafana and New Relic connection details (see Configuration section above).
 
-### 7. .gitignore
+### 11. .gitignore
 Pre-configured to exclude sensitive files:
 - config.json (credentials)
 - Exported dashboard JSON files
