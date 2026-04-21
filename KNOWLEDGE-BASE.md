@@ -51,7 +51,59 @@ node upload-with-template.js "D:\AstroPayTV\PayTV\reports\result.html" "1ngmUfc0
 
 ---
 
-## 2. Jenkins Jobs - Locust Load Testing
+## 2. Read Data from Google Sheet
+
+### Command
+```bash
+node read-gsheet.js <SPREADSHEET_ID> [options]
+```
+
+### Options
+- `--sheet <name>` - Sheet name to read from (default: first sheet)
+- `--range <A1:Z100>` - Cell range to read (default: all data)
+- `--creds <path>` - Path to credentials JSON (default: credentials.json)
+- `--format <json|csv>` - Output format (default: json)
+
+### Examples
+```bash
+# Read all data from first sheet (JSON format)
+node read-gsheet.js 1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw
+
+# Read specific sheet
+node read-gsheet.js 1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw --sheet "Subscriber_21-04-26"
+
+# Read specific range
+node read-gsheet.js 1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw --sheet "Load Test Results" --range "A1:K50"
+
+# Output as CSV
+node read-gsheet.js 1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw --sheet "Subscriber_21-04-26" --format csv
+
+# Use custom credentials file
+node read-gsheet.js 1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw --creds my-creds.json
+```
+
+### Output Formats
+
+**JSON (default):**
+- First row used as headers
+- Returns array of objects
+- Easy to parse programmatically
+
+**CSV:**
+- Raw comma-separated values
+- All rows including header
+- Ready for Excel/spreadsheet import
+
+### Notes
+- Requires `credentials.json` with Google Sheets API read access
+- Same credentials used for upload-with-template.js work here
+- Use `--format json` for structured data parsing
+- Use `--format csv` for quick viewing or Excel import
+- Empty cells are returned as empty strings
+
+---
+
+## 3. Jenkins Jobs - Locust Load Testing
 
 ### Job: "Locust - Test Runner"
 **URL**: http://localhost:8080/job/Locust%20-%20Test%20Runner/  
@@ -99,7 +151,7 @@ node jenkins-client.js status "Locust Code n Data Copy" <BUILD_NUMBER>
 
 ---
 
-## 3. Complete Load Testing Workflow
+## 4. Complete Load Testing Workflow
 
 ### Overview
 End-to-end workflow for running load tests, collecting infrastructure metrics, and publishing results.
@@ -302,7 +354,7 @@ Next Steps: Optimize database queries before scaling to 10K users"
 
 ---
 
-## 4. Breaking Point Load Test Mode
+## 5. Breaking Point Load Test Mode
 
 ### Overview
 Execute multiple load test iterations with increasing user counts (n1, n2, n3...) to identify the application's breaking point. Tests automatically stop when breaking point criteria are met or all iterations complete.
@@ -330,7 +382,7 @@ Iteration 6: 100,000 users
 
 #### Step 2: Execute Complete Load Test Flow for Each Iteration
 
-For each iteration, follow the **Complete Load Testing Workflow** (Section 3):
+For each iteration, follow the **Complete Load Testing Workflow** (Section 4):
 
 ##### 2.1 Run Load Test via Jenkins
 ```bash
@@ -706,7 +758,7 @@ node upload-with-template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsO
 
 ---
 
-## 5. Metrics Analysis & Issue Identification Guide
+## 6. Metrics Analysis & Issue Identification Guide
 
 ### Overview
 Comprehensive guide for analyzing Grafana (Kubernetes) and New Relic (APM) metrics to identify performance bottlenecks and root causes.
