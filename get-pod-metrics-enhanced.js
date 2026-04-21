@@ -29,6 +29,17 @@ async function getPodMetricsEnhanced(serviceName, startEpoch, endEpoch) {
         
         console.log(`Found ${podInfo.data.result.length} pod(s)\n`);
         
+        // Validate that we have sufficient pod coverage (at least 10-15% of total pods)
+        const totalPodsFound = podInfo.data.result.length;
+        const minimumPodCoverage = Math.max(1, Math.ceil(totalPodsFound * 0.10)); // At least 10% or 1 pod
+        const recommendedPodCoverage = Math.max(2, Math.ceil(totalPodsFound * 0.15)); // At least 15% or 2 pods
+        
+        console.log(`ℹ️  Pod Coverage Validation:`);
+        console.log(`   Total pods found: ${totalPodsFound}`);
+        console.log(`   Minimum expected (10%): ${minimumPodCoverage} pods`);
+        console.log(`   Recommended (15%): ${recommendedPodCoverage} pods`);
+        console.log(`   Status: Will validate metrics collection across all ${totalPodsFound} pods\n`);
+        
         const pods = podInfo.data.result.map(result => ({
             name: result.metric.pod,
             namespace: result.metric.namespace,
@@ -230,8 +241,33 @@ async function getPodMetricsEnhanced(serviceName, startEpoch, endEpoch) {
         }
         
         console.log('\n=== SUMMARY ===');
+        
+        // Validate that we collected metrics from sufficient pods
+        const podsWithCpuData = Object.keys(cpuStats).length;
+        const podsWithMemData = Object.keys(memStats).length;
+        const podsWithData = Math.min(podsWithCpuData, podsWithMemData);
+        const coveragePercentage = totalPodsFound > 0 ? (podsWithData / totalPodsFound * 100).toFixed(1) : 0;
+        
+        console.log(`\n📊 Metrics Coverage:`);
+        console.log(`   Pods with CPU data: ${podsWithCpuData}/${totalPodsFound} (${(podsWithCpuData/totalPodsFound*100).toFixed(1)}%)`);
+        console.log(`   Pods with Memory data: ${podsWithMemData}/${totalPodsFound} (${(podsWithMemData/totalPodsFound*100).toFixed(1)}%)`);
+        console.log(`   Overall coverage: ${podsWithData}/${totalPodsFound} (${coveragePercentage}%)`);
+        
+        if (coveragePercentage < 10) {
+            console.log(`   ⚠️  WARNING: Coverage below 10% minimum threshold!`);
+        } else if (coveragePercentage < 15) {
+            console.log(`   ⚠️  CAUTION: Coverage below 15% recommended threshold`);
+        } else {
+            console.log(`   ✅ Coverage meets recommended threshold (≥15%)`);
+        }
+        
         const result = {
             podCount: pods.length,
+            podsWithData: podsWithData,
+            coverage: {
+                percentage: parseFloat(coveragePercentage),
+                status: coveragePercentage >= 15 ? 'GOOD' : (coveragePercentage >= 10 ? 'ACCEPTABLE' : 'LOW')
+            },
             cpu: {
                 avgUtilization: avgCpuUtilization.toFixed(1),
                 maxUtilization: maxCpuUtilization.toFixed(1),
@@ -245,7 +281,7 @@ async function getPodMetricsEnhanced(serviceName, startEpoch, endEpoch) {
             podRestarts: hasRestarts
         };
         
-        console.log(`Pods: ${result.podCount}`);
+        console.log(`\nPods: ${result.podCount} (${result.podsWithData} with complete data - ${result.coverage.percentage}% coverage)`);
         console.log(`CPU: ${result.cpu.avgUtilization}% avg, ${result.cpu.maxUtilization}% max`);
         console.log(`Memory: ${result.memory.avgUtilization}% avg, ${result.memory.maxUtilization}% max`);
         console.log(`Pod Restarts: ${result.podRestarts ? 'YES' : 'NO'}`);

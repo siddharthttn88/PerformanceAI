@@ -555,7 +555,7 @@ async function uploadToGoogleSheet() {
                     }
                 }
             },
-            // Set Name column (B) to fixed width
+            // Set Name column (B) to fixed width - 400px
             {
                 updateDimensionProperties: {
                     range: {
@@ -568,6 +568,258 @@ async function uploadToGoogleSheet() {
                         pixelSize: 400
                     },
                     fields: 'pixelSize'
+                }
+            },
+            // Set Average (ms) column (E) to 85px
+            {
+                updateDimensionProperties: {
+                    range: {
+                        sheetId: sheetId,
+                        dimension: 'COLUMNS',
+                        startIndex: 4,
+                        endIndex: 5
+                    },
+                    properties: {
+                        pixelSize: 85
+                    },
+                    fields: 'pixelSize'
+                }
+            },
+            // Set Min (ms) column (F) to 65px
+            {
+                updateDimensionProperties: {
+                    range: {
+                        sheetId: sheetId,
+                        dimension: 'COLUMNS',
+                        startIndex: 5,
+                        endIndex: 6
+                    },
+                    properties: {
+                        pixelSize: 65
+                    },
+                    fields: 'pixelSize'
+                }
+            },
+            // Set Max (ms) column (G) to 65px
+            {
+                updateDimensionProperties: {
+                    range: {
+                        sheetId: sheetId,
+                        dimension: 'COLUMNS',
+                        startIndex: 6,
+                        endIndex: 7
+                    },
+                    properties: {
+                        pixelSize: 65
+                    },
+                    fields: 'pixelSize'
+                }
+            },
+            // Set RPS column (H) to 65px
+            {
+                updateDimensionProperties: {
+                    range: {
+                        sheetId: sheetId,
+                        dimension: 'COLUMNS',
+                        startIndex: 7,
+                        endIndex: 8
+                    },
+                    properties: {
+                        pixelSize: 65
+                    },
+                    fields: 'pixelSize'
+                }
+            },
+            // Set Failures/s column (I) to 85px
+            {
+                updateDimensionProperties: {
+                    range: {
+                        sheetId: sheetId,
+                        dimension: 'COLUMNS',
+                        startIndex: 8,
+                        endIndex: 9
+                    },
+                    properties: {
+                        pixelSize: 85
+                    },
+                    fields: 'pixelSize'
+                }
+            },
+            // Set 90%ile (ms) column (J) to 85px
+            {
+                updateDimensionProperties: {
+                    range: {
+                        sheetId: sheetId,
+                        dimension: 'COLUMNS',
+                        startIndex: 9,
+                        endIndex: 10
+                    },
+                    properties: {
+                        pixelSize: 85
+                    },
+                    fields: 'pixelSize'
+                }
+            },
+            // Set 95%ile (ms) column (K) to 85px
+            {
+                updateDimensionProperties: {
+                    range: {
+                        sheetId: sheetId,
+                        dimension: 'COLUMNS',
+                        startIndex: 10,
+                        endIndex: 11
+                    },
+                    properties: {
+                        pixelSize: 85
+                    },
+                    fields: 'pixelSize'
+                }
+            },
+            // Set number format for Average (ms) column (E)
+            {
+                repeatCell: {
+                    range: {
+                        sheetId: sheetId,
+                        startRowIndex: startRow + 4,
+                        endRowIndex: startRow + rows.length - 1,
+                        startColumnIndex: 4,
+                        endColumnIndex: 5
+                    },
+                    cell: {
+                        userEnteredFormat: {
+                            numberFormat: {
+                                type: 'NUMBER',
+                                pattern: '#,##0.00'
+                            }
+                        }
+                    },
+                    fields: 'userEnteredFormat.numberFormat'
+                }
+            },
+            // Set number format for Min (ms) column (F)
+            {
+                repeatCell: {
+                    range: {
+                        sheetId: sheetId,
+                        startRowIndex: startRow + 4,
+                        endRowIndex: startRow + rows.length - 1,
+                        startColumnIndex: 5,
+                        endColumnIndex: 6
+                    },
+                    cell: {
+                        userEnteredFormat: {
+                            numberFormat: {
+                                type: 'NUMBER',
+                                pattern: '#,##0'
+                            }
+                        }
+                    },
+                    fields: 'userEnteredFormat.numberFormat'
+                }
+            },
+            // Set number format for Max (ms) column (G)
+            {
+                repeatCell: {
+                    range: {
+                        sheetId: sheetId,
+                        startRowIndex: startRow + 4,
+                        endRowIndex: startRow + rows.length - 1,
+                        startColumnIndex: 6,
+                        endColumnIndex: 7
+                    },
+                    cell: {
+                        userEnteredFormat: {
+                            numberFormat: {
+                                type: 'NUMBER',
+                                pattern: '#,##0'
+                            }
+                        }
+                    },
+                    fields: 'userEnteredFormat.numberFormat'
+                }
+            },
+            // Set number format for RPS column (H)
+            {
+                repeatCell: {
+                    range: {
+                        sheetId: sheetId,
+                        startRowIndex: startRow + 4,
+                        endRowIndex: startRow + rows.length - 1,
+                        startColumnIndex: 7,
+                        endColumnIndex: 8
+                    },
+                    cell: {
+                        userEnteredFormat: {
+                            numberFormat: {
+                                type: 'NUMBER',
+                                pattern: '#,##0.00'
+                            }
+                        }
+                    },
+                    fields: 'userEnteredFormat.numberFormat'
+                }
+            },
+            // Set number format for Failures/s column (I)
+            {
+                repeatCell: {
+                    range: {
+                        sheetId: sheetId,
+                        startRowIndex: startRow + 4,
+                        endRowIndex: startRow + rows.length - 1,
+                        startColumnIndex: 8,
+                        endColumnIndex: 9
+                    },
+                    cell: {
+                        userEnteredFormat: {
+                            numberFormat: {
+                                type: 'NUMBER',
+                                pattern: '#,##0.00'
+                            }
+                        }
+                    },
+                    fields: 'userEnteredFormat.numberFormat'
+                }
+            },
+            // Set number format for 90%ile (ms) column (J)
+            {
+                repeatCell: {
+                    range: {
+                        sheetId: sheetId,
+                        startRowIndex: startRow + 4,
+                        endRowIndex: startRow + rows.length - 1,
+                        startColumnIndex: 9,
+                        endColumnIndex: 10
+                    },
+                    cell: {
+                        userEnteredFormat: {
+                            numberFormat: {
+                                type: 'NUMBER',
+                                pattern: '#,##0'
+                            }
+                        }
+                    },
+                    fields: 'userEnteredFormat.numberFormat'
+                }
+            },
+            // Set number format for 95%ile (ms) column (K)
+            {
+                repeatCell: {
+                    range: {
+                        sheetId: sheetId,
+                        startRowIndex: startRow + 4,
+                        endRowIndex: startRow + rows.length - 1,
+                        startColumnIndex: 10,
+                        endColumnIndex: 11
+                    },
+                    cell: {
+                        userEnteredFormat: {
+                            numberFormat: {
+                                type: 'NUMBER',
+                                pattern: '#,##0'
+                            }
+                        }
+                    },
+                    fields: 'userEnteredFormat.numberFormat'
                 }
             }
         ];
