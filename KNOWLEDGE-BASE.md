@@ -4,6 +4,165 @@ This document contains predefined commands and their usage rules for performance
 
 ---
 
+## 0. Enhanced Scripts for Load Testing
+
+### Overview
+Three enhanced scripts provide automated data extraction, exact timestamp alignment, and comprehensive metrics analysis:
+
+#### 1. inspect-data-enhanced.js - Test Report Analysis
+**Purpose**: Extract comprehensive metadata from Locust result.html
+
+**Usage**:
+```bash
+# Text output (human-readable)
+node inspect-data-enhanced.js "<PATH_TO_RESULT_HTML>" text
+
+# JSON output (machine-readable)
+node inspect-data-enhanced.js "<PATH_TO_RESULT_HTML>" json
+```
+
+**Enhanced Features**:
+- ✅ **Exact Timestamps**: Extracts start, end, and buffer end (end + 60s) in ISO and epoch formats
+- ✅ **Failure Status Codes**: Auto-groups failures by HTTP status (504, 401, 404, 502, 400)
+- ✅ **Top 5 Slowest**: Auto-sorted by avg_response_time (descending)
+- ✅ **Top 5 Highest Error Rate**: Auto-sorted by failure_rate (descending)
+- ✅ **Duration with Buffer**: Calculates test duration + 60s stabilization period
+- ✅ **Dual Output Formats**: Text for viewing, JSON for scripting
+
+**Example Output**:
+```
+=== TEST TIMESTAMPS ===
+Start Time: 2026-04-21T06:46:19.000Z (Epoch: 1776753979)
+End Time:   2026-04-21T06:51:19.000Z (Epoch: 1776754279)
+Buffer End: 2026-04-21T06:52:19.000Z (Epoch: 1776754339)
+
+=== FAILURE STATUS CODES ===
+Status 504: 297,092 failures (99.87%)
+Status 401: 183 failures (0.06%)
+Status 404: 175 failures (0.06%)
+
+=== TOP 5 SLOWEST ENDPOINTS ===
+1. DELETE Remove_Favourite: 12,868ms avg (6,131 requests, 43.70% error)
+2. GET Get_Favourite_List: 7,289ms avg (68,638 requests, 67.22% error)
+...
+```
+
+---
+
+#### 2. get-pod-metrics-enhanced.js - Kubernetes Metrics with AVG/MAX
+**Purpose**: Collect infrastructure metrics with both average and maximum values
+
+**Usage**:
+```bash
+# RECOMMENDED: Use exact epoch timestamps
+node get-pod-metrics-enhanced.js <service-name> <START_EPOCH> <END_EPOCH>
+
+# Example with exact timestamps
+node get-pod-metrics-enhanced.js subscriber-event-service 1776753979 1776754339
+
+# ALTERNATIVE: Use duration in minutes (legacy)
+node get-pod-metrics-enhanced.js <service-name> <DURATION_IN_MINUTES>
+```
+
+**Enhanced Features**:
+- ✅ **AVG and MAX CPU**: Shows both average and peak CPU utilization (solves 76% vs 99% discrepancy)
+- ✅ **AVG and MAX Memory**: Shows both average and peak memory utilization
+- ✅ **Exact Time Range**: Uses epoch timestamps for precise Prometheus queries
+- ✅ **Range Queries**: Uses `avg_over_time()` and `max_over_time()` for historical analysis
+- ✅ **Per-Pod Breakdown**: Shows AVG and MAX for each pod individually
+- ✅ **Resource Utilization %**: Calculates CPU/Memory as % of allocated limits
+
+**Example Output**:
+```
+=== CPU USAGE STATISTICS ===
+Per-Pod CPU Statistics:
+  subscriber-event-service-5dfbdc7d4-9zq5n:
+    AVG CPU: 1174.92 millicores (29.4% of 4000m limit)
+    MAX CPU: 3978.08 millicores (99.5% of limit)
+
+Overall CPU Summary:
+  AVG Utilization: 29.7%
+  MAX Utilization: 100.1%  ← Matches New Relic's 99%!
+
+=== MEMORY USAGE STATISTICS ===
+Overall Memory Summary:
+  AVG Utilization: 44.9%
+  MAX Utilization: 66.8%
+```
+
+**Key Insight**: Original script showed AVG CPU (~30%), missing the 100% peaks that New Relic detected!
+
+---
+
+#### 3. get-apm-metrics-enhanced.js - APM Metrics with Transaction Sorting
+**Purpose**: Collect New Relic APM metrics with transaction-level analysis
+
+**Usage**:
+```bash
+# RECOMMENDED: Use exact epoch timestamps with top-N parameter
+node get-apm-metrics-enhanced.js <app-name> <START_EPOCH> <END_EPOCH> [TOP_N]
+
+# Example: Get top 5 transactions using exact timestamps
+node get-apm-metrics-enhanced.js subscriber-event 1776753979 1776754339 5
+
+# ALTERNATIVE: Use duration in minutes
+node get-apm-metrics-enhanced.js <app-name> <DURATION_IN_MINUTES> [TOP_N]
+```
+
+**Enhanced Features**:
+- ✅ **Top N Slowest**: Auto-sorted by avg_duration (descending) - identifies performance bottlenecks
+- ✅ **Top N Highest Error Rate**: Auto-sorted by error_rate (descending) - identifies failure patterns
+- ✅ **Exact SINCE/UNTIL**: Uses epoch timestamps in NRQL queries for precision
+- ✅ **Configurable Top-N**: Default 10, customize as needed (5, 20, etc.)
+- ✅ **HTTP Status Breakdown**: Shows error distribution by status code when available
+- ✅ **Host-Level Metrics**: Per-pod performance analysis
+
+**Example Output**:
+```
+=== TOP 5 SLOWEST TRANSACTIONS ===
+1. WebTransaction/SpringController/v3/favourites (GET)
+   Requests: 15,211 | Avg Duration: 5425.17 ms | P95: 8234 ms
+   Error Rate: 58.39%
+
+2. WebTransaction/SpringController/v3/continue-watch/continue (GET)
+   Requests: 19,711 | Avg Duration: 2363.27 ms | P95: 4521 ms
+   Error Rate: 55.52%
+
+=== TOP 5 HIGHEST ERROR RATE TRANSACTIONS ===
+1. v3/favourites (GET): 58.39% error (15,211 requests, 8,882 failures)
+2. v3/continue-watch/continue (GET): 55.52% error (19,711 requests, 10,944 failures)
+...
+```
+
+---
+
+### Enhanced Workflow Benefits
+
+**Problem Solved: CPU Discrepancy**
+- **Old Script**: Showed 76% CPU (incorrect - was showing current/average)
+- **New Relic**: Showed 99% CPU (correct - was showing maximum)
+- **Enhanced Script**: Shows BOTH - AVG: 29.7%, MAX: 100.1%
+- **Root Cause**: Pods briefly maxed CPU at 100%, but avg was only 30%
+
+**Problem Solved: Time Range Alignment**
+- **Old Workflow**: Used "last N minutes from NOW" - metrics could drift from test period
+- **Enhanced Workflow**: Uses exact epoch timestamps from test start/end - perfect alignment
+
+**Problem Solved: Manual Sorting**
+- **Old Workflow**: Manually review all endpoints to find slowest and highest error rate
+- **Enhanced Workflow**: Auto-sorted top 5 lists for both criteria
+
+**Problem Solved: Missing Failure Details**
+- **Old Workflow**: Only total failure count, no breakdown by type
+- **Enhanced Workflow**: HTTP status code breakdown (504: 99.87%, 401: 0.06%, etc.)
+
+**Migration from Legacy Scripts**:
+- Legacy scripts preserved: `inspect-data.js`, `get-pod-metrics.js`, `get-apm-metrics.js`
+- Enhanced scripts backward compatible: Support both epoch timestamps and duration minutes
+- See [ENHANCEMENTS-SUMMARY.md](ENHANCEMENTS-SUMMARY.md) for detailed migration guide
+
+---
+
 ## 1. Append Load Test Results to Google Sheet
 
 ### Primary Command (Recommended - Enhanced Locust Template)
@@ -233,24 +392,44 @@ node jenkins-client.js status "Locust - Test Runner" <BUILD_NUMBER>
 - Which service was tested?
 - Google Sheet link for results?
 
-**Extract Test Duration & Wait:**
+**Extract Test Metadata & Exact Timestamps (ENHANCED):**
 ```bash
-# Extract test duration from result.html
-node inspect-data.js "D:\PerformanceAI\Reports\result.html"
-# Output shows: duration="3 minutes" or "5 minutes" etc.
+# Extract comprehensive test metadata using enhanced script
+node inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" text
+# Output includes:
+# - Exact timestamps: startEpoch, endEpoch, bufferEndEpoch (end + 60s)
+# - Test duration with buffer
+# - Failure status codes breakdown (504, 401, 404, etc.)
+# - Top 5 slowest endpoints by response time
+# - Top 5 highest error rate endpoints
+
+# For JSON output (machine-readable):
+node inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" json
 
 # Wait 1 minute after test completion for metrics to stabilize
 Start-Sleep -Seconds 60
 ```
 
-**Fetch from Grafana (Kubernetes Metrics):**
+**Fetch from Grafana (Kubernetes Metrics) - ENHANCED with AVG/MAX:**
 ```bash
-# Use actual test duration (e.g., if test was 3 minutes, use 3)
-node get-pod-metrics.js <service-name> <DURATION_IN_MINUTES>
+# RECOMMENDED: Use exact epoch timestamps from inspect-data-enhanced.js
+node get-pod-metrics-enhanced.js <service-name> <START_EPOCH> <END_EPOCH>
+
+# Example: Using exact timestamps from test
+node get-pod-metrics-enhanced.js subscriber-event-service 1776753979 1776754339
+
+# ALTERNATIVE: Use duration in minutes (legacy compatibility)
+node get-pod-metrics-enhanced.js <service-name> <DURATION_IN_MINUTES>
 
 # Example: For a 3-minute test
-node get-pod-metrics.js subscriber-event-service 3
+node get-pod-metrics-enhanced.js subscriber-event-service 3
 ```
+
+**New Features:**
+- ✅ Shows **both AVG and MAX** CPU/Memory utilization
+- ✅ Uses exact timestamps from result.html for precise metrics
+- ✅ Prometheus range queries for historical data analysis
+- ✅ Per-pod breakdown with AVG and MAX values
 - Number of Pods (Running/Pending/Failed)
 - CPU Allocated & Utilization per pod
 - Memory Allocated & Utilization per pod
@@ -258,20 +437,31 @@ node get-pod-metrics.js subscriber-event-service 3
 - Pod restarts count
 - Pod status and health
 
-**Fetch from New Relic (APM Metrics):**
+**Fetch from New Relic (APM Metrics) - ENHANCED with Transaction Sorting:**
 ```bash
-# Use actual test duration (e.g., if test was 3 minutes, use 3)
-node get-apm-metrics.js <application-name> <DURATION_IN_MINUTES>
+# RECOMMENDED: Use exact epoch timestamps from inspect-data-enhanced.js
+node get-apm-metrics-enhanced.js <application-name> <START_EPOCH> <END_EPOCH> [TOP_N]
 
-# Example: For a 3-minute test
-node get-apm-metrics.js subscriber-event 3
+# Example: Using exact timestamps, get top 5 transactions
+node get-apm-metrics-enhanced.js subscriber-event 1776753979 1776754339 5
+
+# ALTERNATIVE: Use duration in minutes (legacy compatibility)
+node get-apm-metrics-enhanced.js <application-name> <DURATION_IN_MINUTES> [TOP_N]
+
+# Example: For a 3-minute test, get top 10 transactions
+node get-apm-metrics-enhanced.js subscriber-event 3 10
 ```
-- Application health status and Apdex score
-- Overall response time and throughput
-- Error rate and error count
-- Host-level metrics (response times per pod)
-- Top transactions by count and duration
-- Slowest endpoints identification
+
+**New Features:**
+- ✅ **Top N Slowest Transactions** - Sorted by avg_duration (descending)
+- ✅ **Top N Highest Error Rate** - Sorted by error_rate (descending)
+- ✅ Uses exact SINCE/UNTIL timestamps for precise NRQL queries
+- ✅ Configurable top-N parameter (default: 10)
+- ✅ HTTP status code breakdown when available
+- ✅ Host-level metrics for all pods
+- ✅ Application health status and Apdex score
+- ✅ Overall response time and throughput
+- ✅ Error rate and error count
 
 **Monitor for Issues:**
 - High response times (>1000ms average)
@@ -281,15 +471,15 @@ node get-apm-metrics.js subscriber-event 3
 - Slow endpoints (P95/P99 > 1000ms)
 - Memory pressure (pods exceeding limits)
 
-#### Step 4: Prepare Comment Section
-Include in `--comment` parameter:
+#### Step 4: Prepare Enhanced Comment Section
+Include in `--comment` parameter (auto-populated from enhanced scripts):
 ```
 Service: <SERVICE_NAME>
 
-Infrastructure (Kubernetes):
-- Pods: <COUNT> (<RUNNING> running, <PENDING> pending, <FAILED> failed)
-- CPU: <ALLOCATED> cores (<AVG_UTILIZATION>% avg, <MAX_UTILIZATION>% peak)
-- Memory: <ALLOCATED> GB (<AVG_UTILIZATION>% avg, <MAX_UTILIZATION>% peak)
+Infrastructure at Breaking Point (Kubernetes):
+- Pods: <COUNT> (<RUNNING> running, <FAILED> failed)
+- CPU: <AVG_UTILIZATION>% avg, <MAX_UTILIZATION>% max  ← Shows BOTH AVG and MAX
+- Memory: <AVG_UTILIZATION>% avg, <MAX_UTILIZATION>% max  ← Shows BOTH AVG and MAX
 - Network: RX <RX_RATE> KB/s, TX <TX_RATE> KB/s
 - Pod Restarts: <COUNT> (if any)
 
@@ -301,22 +491,39 @@ APM Metrics (New Relic):
 - Total Errors: <COUNT>
 
 Test Results:
-- Total endpoints: <COUNT>
+- Total requests: <COUNT>
 - Total failures: <COUNT> (<PERCENTAGE>%)
 - Avg response time: <VALUE>ms
 - Max response time: <VALUE>ms
 
-Slowest Endpoints (Top 5):
-1. <ENDPOINT_1>: <AVG_TIME>ms avg, <REQUESTS> requests, <FAILURES> failures
-2. <ENDPOINT_2>: <AVG_TIME>ms avg, <REQUESTS> requests, <FAILURES> failures
-3. <ENDPOINT_3>: <AVG_TIME>ms avg, <REQUESTS> requests, <FAILURES> failures
-4. <ENDPOINT_4>: <AVG_TIME>ms avg, <REQUESTS> requests, <FAILURES> failures
-5. <ENDPOINT_5>: <AVG_TIME>ms avg, <REQUESTS> requests, <FAILURES> failures
+Top 5 Slowest Endpoints (Auto-sorted by response time):
+1. <ENDPOINT_1>: <AVG_TIME>ms avg (<ERROR_RATE>% error, <REQUESTS> requests)
+2. <ENDPOINT_2>: <AVG_TIME>ms avg (<ERROR_RATE>% error, <REQUESTS> requests)
+3. <ENDPOINT_3>: <AVG_TIME>ms avg (<ERROR_RATE>% error, <REQUESTS> requests)
+4. <ENDPOINT_4>: <AVG_TIME>ms avg (<ERROR_RATE>% error, <REQUESTS> requests)
+5. <ENDPOINT_5>: <AVG_TIME>ms avg (<ERROR_RATE>% error, <REQUESTS> requests)
 
-Issues Detected:
-- [Analyze Grafana + New Relic data to identify bottlenecks]
-- Bottleneck Type: <CPU/Memory/Database/Network/Application>
-- Root Cause: <Brief analysis based on metrics>
+Top 5 Highest Error Rate (Auto-sorted by failure rate):
+1. <ENDPOINT_1>: <ERROR_RATE>% error (<AVG_TIME>ms avg, <REQUESTS> requests)
+2. <ENDPOINT_2>: <ERROR_RATE>% error (<AVG_TIME>ms avg, <REQUESTS> requests)
+3. <ENDPOINT_3>: <ERROR_RATE>% error (<AVG_TIME>ms avg, <REQUESTS> requests)
+4. <ENDPOINT_4>: <ERROR_RATE>% error (<AVG_TIME>ms avg, <REQUESTS> requests)
+5. <ENDPOINT_5>: <ERROR_RATE>% error (<AVG_TIME>ms avg, <REQUESTS> requests)
+
+Failure Status Codes (Auto-extracted from result.html):
+- 504 Gateway Timeout: <COUNT> (<PERCENTAGE>%)  ← Most common
+- 401 Unauthorized: <COUNT> (<PERCENTAGE>%)
+- 404 Not Found: <COUNT> (<PERCENTAGE>%)
+- 502 Bad Gateway: <COUNT> (<PERCENTAGE>%)
+- 400 Bad Request: <COUNT> (<PERCENTAGE>%)
+
+Root Cause Analysis:
+- Primary Bottleneck: <CPU/Memory/I/O/Application>
+- Evidence:
+  * CPU: <AVG>% avg, <MAX>% max
+  * Memory: <AVG>% avg, <MAX>% max
+  * Slowest endpoint: <NAME> (<TIME>ms)
+  * Primary failure: <STATUS_CODE> (<PERCENTAGE>%)
 - Recommended Action: <Specific suggestion based on data>
 ```
 
@@ -327,7 +534,7 @@ node upload-with-Locust_Template.js "<HTML_REPORT_PATH>" "<SPREADSHEET_ID>" --us
 
 **Note**: Use `upload-with-template.js` (legacy) if you prefer the original 3-column format without merged cells.
 
-### Example Complete Workflow
+### Example Complete Workflow (Using Enhanced Scripts)
 ```bash
 # 1. Run test
 node jenkins-client.js build "Locust - Test Runner" Master_IP=10.16.7.202 Users=5000 RampUp=84 Duration=5m
@@ -336,31 +543,49 @@ node jenkins-client.js build "Locust - Test Runner" Master_IP=10.16.7.202 Users=
 node jenkins-client.js wait "Locust - Test Runner" 427
 # Report location: D:\PerformanceAI\Reports\result.html
 
-# Extract test duration and wait 1 minute
-node inspect-data.js "D:\PerformanceAI\Reports\result.html"
-# Output: duration="5 minutes" (use 5 for metrics collection)
+# Extract test metadata with EXACT TIMESTAMPS (ENHANCED)
+node inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" text
+# Output:
+# - Start Time: 2026-04-21T06:46:19Z (Epoch: 1776753979)
+# - End Time: 2026-04-21T06:51:19Z (Epoch: 1776754279)
+# - Buffer End: 2026-04-21T06:52:19Z (Epoch: 1776754339)
+# - Duration: 300s (360s with buffer)
+# - Failure Status Codes: 504 (99.87%), 401 (0.06%), 404 (0.06%)
+# - Top 5 Slowest: Remove_Favourite (12,868ms), Get_Favourite_List (7,289ms)...
+# - Top 5 Highest Error Rate: Get_Favourite_List (67.22%), Get_ContinueWatch (61.37%)...
+
+# Wait 1 minute for metrics to stabilize
 Start-Sleep -Seconds 60
 
-# 3. Fetch infrastructure metrics (using actual test duration)
-node get-pod-metrics.js subscriber-event 5
-# Output: 20 pods, CPU: 35% avg, Memory: 60% avg, No restarts
+# 3. Fetch infrastructure metrics with EXACT TIMESTAMPS and AVG/MAX (ENHANCED)
+node get-pod-metrics-enhanced.js subscriber-event-service 1776753979 1776754339
+# Output: 
+# - 10 pods running
+# - CPU: 29.7% avg, 100.1% max  ← Shows BOTH values (solves 76% vs 99% issue)
+# - Memory: 44.9% avg, 66.8% max  ← Shows BOTH values
+# - No restarts
 
-node get-apm-metrics.js subscriber-event 5
-# Output: Response time: 450ms avg, Throughput: 25000 rpm, Error rate: 0.16%, Top transactions
+# Fetch APM metrics with EXACT TIMESTAMPS and TOP 5 SORTING (ENHANCED)
+node get-apm-metrics-enhanced.js subscriber-event 1776753979 1776754339 5
+# Output:
+# - Total Requests: 107,102
+# - Top 5 Slowest: v3/favourites (5,425ms), continue-watch (2,363ms)...
+# - Top 5 Highest Error Rate: v3/favourites (58.39%), continue-watch (55.52%)...
+# - Response time: 1,352ms avg, Throughput: 35,700 rpm, Error rate: 0.16%
 
-# 4. Analyze metrics and identify issues
-# - Compare Grafana (infrastructure) vs New Relic (application) metrics
-# - Identify slowest endpoints from New Relic Top Transactions
-# - Check for resource bottlenecks (CPU/Memory >80%)
-# - Correlate error patterns with infrastructure events
+# 4. Analyze metrics and identify issues (AUTO-POPULATED FROM ENHANCED SCRIPTS)
+# - inspect-data-enhanced.js provides: Failure codes, Top 5 slowest, Top 5 highest error rate
+# - get-pod-metrics-enhanced.js provides: AVG/MAX CPU/Memory (solves discrepancy issue)
+# - get-apm-metrics-enhanced.js provides: Sorted transactions by duration and error rate
+# - Compare all three sources to identify bottlenecks
 
-# 5. Upload results with comprehensive analysis
+# 5. Upload results with comprehensive analysis (using auto-extracted data)
 node upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 5000 --rampup "1 minute" --targettps 83 --comment "Subscriber Event Service Load Test
 
 Infrastructure (Kubernetes):
 - Pods: 20 (all running, no restarts)
-- CPU: 4 cores allocated (35% avg, 42% peak)
-- Memory: 4 GB allocated (60% avg, 68% peak)
+- CPU: 35% avg, 42% max  ← ENHANCED: Shows both AVG and MAX
+- Memory: 60% avg, 68% max  ← ENHANCED: Shows both AVG and MAX
 - Network: RX 8,200 KB/s, TX 4,100 KB/s
 
 APM Metrics (New Relic):
@@ -371,26 +596,37 @@ APM Metrics (New Relic):
 - Total Errors: 120
 
 Test Results:
-- Total endpoints: 12
 - Total requests: 75,000
 - Total failures: 120 (0.16%)
 - Avg response time: 450ms
 - Max response time: 1,850ms
 
-Slowest Endpoints (Top 5):
-1. /api/get-history: 820ms avg, 15,000 requests, 80 failures
-2. /api/search-content: 650ms avg, 12,000 requests, 25 failures
-3. /api/get-recommendations: 580ms avg, 10,000 requests, 15 failures
-4. /api/user-profile: 420ms avg, 18,000 requests, 0 failures
-5. /api/get-favorites: 380ms avg, 8,000 requests, 0 failures
+Top 5 Slowest Endpoints (Auto-sorted by response time):
+1. /api/get-history: 820ms avg (5.3% error, 15,000 requests)
+2. /api/search-content: 650ms avg (2.1% error, 12,000 requests)
+3. /api/get-recommendations: 580ms avg (1.5% error, 10,000 requests)
+4. /api/user-profile: 420ms avg (0% error, 18,000 requests)
+5. /api/get-favorites: 380ms avg (0% error, 8,000 requests)
 
-Analysis:
-- Bottleneck: Database queries (get-history endpoint)
-- Root Cause: Unoptimized queries without proper indexing
+Top 5 Highest Error Rate (Auto-sorted by failure rate):
+1. /api/get-history: 5.3% error (820ms avg, 15,000 requests)
+2. /api/search-content: 2.1% error (650ms avg, 12,000 requests)
+3. /api/get-recommendations: 1.5% error (580ms avg, 10,000 requests)
+4. /api/user-profile: 0% error (420ms avg, 18,000 requests)
+5. /api/delete-item: 0% error (180ms avg, 5,000 requests)
+
+Failure Status Codes (Auto-extracted):
+- 504 Gateway Timeout: 80 (66.7%)  ← Primary issue
+- 500 Internal Server Error: 25 (20.8%)
+- 503 Service Unavailable: 15 (12.5%)
+
+Root Cause Analysis:
+- Primary Bottleneck: Database I/O (get-history endpoint)
 - Evidence: 
-  * CPU/Memory healthy (<70%) but response times elevated
+  * CPU/Memory healthy (avg <70%, max <80%) - not resource constrained
   * Slowest endpoints all DB-heavy operations
-  * Linear degradation with request count
+  * 504 timeouts indicate backend database saturation
+  * Response times correlate with query complexity
 - Recommended Action: Add database indexes on history table, implement query caching
 
 Status: PASS - All metrics within acceptable thresholds
@@ -399,13 +635,22 @@ Next Steps: Optimize database queries before scaling to 10K users"
 
 ### Notes
 - **Always wait 1 minute** after test completion before collecting metrics to allow stabilization
-- **Always use actual test duration** from result.html for metrics collection (not hardcoded values)
-- **Always collect both Grafana and New Relic metrics** - Infrastructure alone doesn't reveal application bottlenecks
+- **Use exact epoch timestamps** from inspect-data-enhanced.js (not relative "last N minutes")
+- **Always collect all three enhanced scripts** for complete analysis:
+  * inspect-data-enhanced.js → Exact timestamps, failure codes, top 5 sorting
+  * get-pod-metrics-enhanced.js → AVG/MAX CPU/Memory with exact time range
+  * get-apm-metrics-enhanced.js → Transaction sorting by duration and error rate
+- **Enhanced scripts solve key issues**:
+  * ✅ CPU discrepancy fixed: Shows both AVG (29.7%) and MAX (100.1%)
+  * ✅ Exact time alignment: All metrics use same epoch timestamps
+  * ✅ Auto-sorting: Top 5 slowest and top 5 highest error rate
+  * ✅ Failure codes: Auto-extracted status code breakdown (504, 401, 404, etc.)
 - Calculate RampUp as Users/60 for 1-minute ramp (or Users/RampupSeconds for custom durations)
-- Fetch infrastructure metrics using test start/end timestamps for accuracy
-- Monitor both application metrics (Grafana/Prometheus) and APM data (New Relic)
-- **Cross-reference metrics**: High response time + low CPU/Memory = I/O bottleneck (database/network)
-- **Identify slowest endpoints**: Use New Relic Top Transactions to prioritize optimization
+- **Cross-reference all three data sources**: 
+  * High response time + low CPU/Memory + 504 errors = Backend I/O bottleneck
+  * High response time + high MAX CPU + low AVG CPU = Intermittent CPU spikes
+  * High error rate + specific status codes = Application or dependency issues
+- **Legacy scripts preserved** for backward compatibility (inspect-data.js, get-pod-metrics.js, get-apm-metrics.js)
 - Document all anomalies, correlations, and root cause analysis in the comment section
 - Include specific recommendations based on metrics (not generic suggestions)
 
@@ -453,61 +698,83 @@ node jenkins-client.js wait "Locust - Test Runner" <BUILD_NUMBER>
 ##### 2.2 Fetch Test Report
 ```bash
 # Report automatically saved to: D:\PerformanceAI\Reports\result.html
-# Extract test metadata and duration
-node inspect-data.js "D:\PerformanceAI\Reports\result.html"
-# Output: duration="3 minutes" (note the duration value for Step 2.3)
+# Extract test metadata with EXACT TIMESTAMPS (ENHANCED)
+node inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" text
+# Output:
+# - Start/End/Buffer timestamps (ISO and Epoch formats)
+# - Duration with 60s buffer
+# - Failure Status Codes: 504 (count, %), 401 (count, %), etc.
+# - Top 5 Slowest Endpoints: Sorted by avg_response_time
+# - Top 5 Highest Error Rate: Sorted by failure_rate
 
 # Wait 1 minute after test completion for metrics to stabilize
 Start-Sleep -Seconds 60
 ```
 
-##### 2.3 Collect Infrastructure Metrics
+##### 2.3 Collect Infrastructure Metrics (ENHANCED WITH AVG/MAX)
 ```bash
-# Fetch pod metrics from Grafana/Prometheus (Kubernetes infrastructure)
-# Use actual test duration extracted from result.html (e.g., 3 for 3 minutes)
-node get-pod-metrics.js <SERVICE_NAME> <DURATION_IN_MINUTES>
-# Returns: Pod count, CPU/Memory utilization, Network I/O, Pod status, Restarts
+# Fetch pod metrics with EXACT TIMESTAMPS and AVG/MAX (ENHANCED)
+# Use startEpoch and bufferEndEpoch from inspect-data-enhanced.js output
+node get-pod-metrics-enhanced.js <SERVICE_NAME> <START_EPOCH> <BUFFER_END_EPOCH>
+# Returns:
+# - Pod count and status
+# - CPU: AVG % and MAX % (e.g., 29.7% avg, 100.1% max)
+# - Memory: AVG % and MAX % (e.g., 44.9% avg, 66.8% max)
+# - Network I/O, Pod restarts
+# - Per-pod breakdown with AVG and MAX values
 
-# Fetch APM metrics from New Relic (Application performance)
-# Use actual test duration extracted from result.html (e.g., 3 for 3 minutes)
-node get-apm-metrics.js <APPLICATION_NAME> <DURATION_IN_MINUTES>
-# Returns: Response times, Throughput, Error rates, Top transactions, Slowest endpoints
+# Fetch APM metrics with EXACT TIMESTAMPS and TOP N SORTING (ENHANCED)
+# Use startEpoch and bufferEndEpoch from inspect-data-enhanced.js output
+node get-apm-metrics-enhanced.js <APPLICATION_NAME> <START_EPOCH> <BUFFER_END_EPOCH> [TOP_N]
+# Returns:
+# - Top N Slowest: Sorted by avg_duration (descending)
+# - Top N Highest Error Rate: Sorted by error_rate (descending)
+# - Response times, Throughput, Error rates
+# - HTTP status breakdown when available
+# - Host-level metrics for all pods
 ```
 
-##### 2.4 Analyze Metrics & Check Breaking Point Criteria
+##### 2.4 Analyze Enhanced Metrics & Check Breaking Point Criteria
 
-**From Test Report** (result.html):
-- Total requests
-- Total failures → Calculate error rate
-- Average response time per API
-- P95/P99 response times
-- Identify slowest endpoints (sort by avg_response_time)
+**From Enhanced Test Report** (inspect-data-enhanced.js):
+- Total requests and failures → Error rate calculated
+- Average response time and P95/P99
+- **Exact timestamps**: startEpoch, endEpoch, bufferEndEpoch
+- **Failure Status Codes**: Auto-grouped by HTTP status (504, 401, 404, 502, 400)
+- **Top 5 Slowest**: Auto-sorted by avg_response_time (descending)
+- **Top 5 Highest Error Rate**: Auto-sorted by failure_rate (descending)
 
-**From Grafana/Prometheus** (get-pod-metrics.js):
+**From Enhanced Grafana/Prometheus** (get-pod-metrics-enhanced.js):
 - Pod count and status (Running/Pending/Failed)
-- Current CPU utilization per pod (millicores)
-- Current memory utilization per pod (MB)
-- CPU/Memory as % of allocated limits
-- Pod restarts count (last 5 minutes)
+- **AVG CPU utilization**: Average over test period (e.g., 29.7%)
+- **MAX CPU utilization**: Peak during test period (e.g., 100.1%)  ← Solves discrepancy!
+- **AVG Memory utilization**: Average over test period (e.g., 44.9%)
+- **MAX Memory utilization**: Peak during test period (e.g., 66.8%)
+- CPU/Memory as % of allocated limits (both AVG and MAX)
+- Pod restarts count (during test period)
 - Network I/O (RX/TX rates in KB/s)
+- Per-pod breakdown with AVG and MAX values
 
-**From New Relic** (get-apm-metrics.js):
+**From Enhanced New Relic** (get-apm-metrics-enhanced.js):
 - Application health status and Apdex score
 - Application-level response times (avg, P95, P99)
-- Host-level response times (per pod/instance)
 - Throughput (requests per minute)
 - Error rates and total error count
-- Top transactions by request count
-- Slowest transactions by avg duration
+- **Top N Slowest Transactions**: Sorted by avg_duration (descending)
+  * Example: v3/favourites (5,425ms), continue-watch (2,363ms), progress (545ms)
+- **Top N Highest Error Rate**: Sorted by error_rate (descending)
+  * Example: v3/favourites (58.39%), continue-watch (55.52%), progress (49.51%)
+- HTTP status breakdown when available
+- Host-level metrics for all pods
 - Recent deployments (if any)
 
-**Breaking Point Check**:
+**Breaking Point Check (Using Enhanced Data)**:
 ```
 BREAKING_POINT = false
 REASONS = []
 
-# From Test Report (result.html)
-IF any API avg_response_time > 1000ms:
+# From Enhanced Test Report (inspect-data-enhanced.js)
+IF any endpoint avg_response_time > 1000ms:
   BREAKING_POINT = true
   REASONS.append("High API Response Time: <ENDPOINT> at <VALUE>ms")
   
@@ -515,20 +782,20 @@ IF error_rate > 5%:
   BREAKING_POINT = true
   REASONS.append("High Error Rate: <VALUE>%")
 
-# From Grafana/Prometheus
-IF any pod CPU utilization > 80%:
+# From Enhanced Grafana/Prometheus (get-pod-metrics-enhanced.js)
+IF MAX CPU utilization > 80%:  ← Check MAX, not AVG
   BREAKING_POINT = true
-  REASONS.append("High CPU Utilization: <POD_NAME> at <VALUE>%")
+  REASONS.append("High MAX CPU: <POD_NAME> at <MAX_VALUE>% (AVG: <AVG_VALUE>%)")
   
-IF any pod Memory utilization > 80%:
+IF MAX Memory utilization > 80%:  ← Check MAX, not AVG
   BREAKING_POINT = true
-  REASONS.append("High Memory Utilization: <POD_NAME> at <VALUE>%")
+  REASONS.append("High MAX Memory: <POD_NAME> at <MAX_VALUE>% (AVG: <AVG_VALUE>%)")
   
 IF any pod restarts detected:
   BREAKING_POINT = true
   REASONS.append("Pod Instability: <COUNT> restarts detected")
 
-# From New Relic APM
+# From Enhanced New Relic APM (get-apm-metrics-enhanced.js)
 IF APM response_time > 1000ms:
   BREAKING_POINT = true
   REASONS.append("High APM Response Time: <VALUE>ms")
@@ -537,18 +804,29 @@ IF APM error_rate > 5%:
   BREAKING_POINT = true
   REASONS.append("High APM Error Rate: <VALUE>%")
 
-# Additional Analysis
+# Enhanced Bottleneck Analysis
 IDENTIFY_BOTTLENECK():
-  IF CPU > 80%: BOTTLENECK = "CPU Bound"
-  ELSE IF Memory > 80%: BOTTLENECK = "Memory Bound"
-  ELSE IF response_time high AND CPU/Memory low: BOTTLENECK = "I/O Bound (Database/Network)"
-  ELSE IF error_rate high: BOTTLENECK = "Application-level errors"
+  IF MAX_CPU > 80%: BOTTLENECK = "CPU Bound (Peak)"
+  ELSE IF MAX_Memory > 80%: BOTTLENECK = "Memory Bound (Peak)"
+  ELSE IF response_time high AND MAX_CPU/MAX_Memory low: BOTTLENECK = "I/O Bound (Database/Network)"
+  ELSE IF error_rate high: 
+    IF failure_code_504 dominant: BOTTLENECK = "Backend Timeout (Database/API)"
+    ELSE IF failure_code_503: BOTTLENECK = "Service Unavailable (Overload)"
+    ELSE: BOTTLENECK = "Application-level errors"
+  
+  # Use Top 5 Slowest from get-apm-metrics-enhanced.js
+  SLOWEST_ENDPOINT = top_5_slowest[0].name
+  SLOWEST_TIME = top_5_slowest[0].avg_duration
+  
+  # Use Top 5 Highest Error Rate from get-apm-metrics-enhanced.js
+  HIGHEST_ERROR_ENDPOINT = top_5_errors[0].name
+  HIGHEST_ERROR_RATE = top_5_errors[0].error_rate
 ```
 
-##### 2.5 Prepare Comment Section with Breaking Point Status
+##### 2.5 Prepare Enhanced Comment Section with Breaking Point Status
 
 ```bash
-# For iterations that PASS (no breaking point)
+# For iterations that PASS (no breaking point) - Use enhanced auto-sorted data
 COMMENT="✅ Breaking Point Test - Iteration <N>
 
 Service: <SERVICE_NAME>
@@ -556,8 +834,8 @@ Load: <USER_COUNT> users
 
 Infrastructure (Kubernetes):
 - Pods: <COUNT> (<RUNNING> running, <PENDING> pending)
-- CPU: <ALLOCATED> cores (<AVG_UTILIZATION>% avg, <MAX_UTILIZATION>% peak)
-- Memory: <ALLOCATED> GB (<AVG_UTILIZATION>% avg, <MAX_UTILIZATION>% peak)
+- CPU: <AVG_UTILIZATION>% avg, <MAX_UTILIZATION>% max  ← ENHANCED: Both values
+- Memory: <AVG_UTILIZATION>% avg, <MAX_UTILIZATION>% max  ← ENHANCED: Both values
 - Network: RX <RX_RATE> KB/s, TX <TX_RATE> KB/s
 - Restarts: None
 
@@ -573,14 +851,23 @@ Test Results:
 - Avg response time: <VALUE>ms
 - Max response time: <VALUE>ms
 
-Slowest Endpoints (Top 3):
-1. <ENDPOINT_1>: <RESPONSE_TIME>ms avg
-2. <ENDPOINT_2>: <RESPONSE_TIME>ms avg
-3. <ENDPOINT_3>: <RESPONSE_TIME>ms avg
+Top 3 Slowest Endpoints (Auto-sorted by response time):
+1. <ENDPOINT_1>: <RESPONSE_TIME>ms avg (<ERROR_RATE>% error, <REQUESTS> requests)
+2. <ENDPOINT_2>: <RESPONSE_TIME>ms avg (<ERROR_RATE>% error, <REQUESTS> requests)
+3. <ENDPOINT_3>: <RESPONSE_TIME>ms avg (<ERROR_RATE>% error, <REQUESTS> requests)
+
+Top 3 Highest Error Rate (Auto-sorted by failure rate):
+1. <ENDPOINT_1>: <ERROR_RATE>% error (<RESPONSE_TIME>ms avg, <REQUESTS> requests)
+2. <ENDPOINT_2>: <ERROR_RATE>% error (<RESPONSE_TIME>ms avg, <REQUESTS> requests)
+3. <ENDPOINT_3>: <ERROR_RATE>% error (<RESPONSE_TIME>ms avg, <REQUESTS> requests)
+
+Failure Status Codes (Auto-extracted):
+- <CODE_1>: <COUNT> (<PERCENTAGE>%)
+- <CODE_2>: <COUNT> (<PERCENTAGE>%)
 
 Analysis:
 - Bottleneck: None identified
-- CPU/Memory: Healthy (<80% utilization)
+- CPU/Memory: Healthy (avg <70%, max <80%)
 - Response Times: Within SLA (<1000ms)
 - Error Rate: Acceptable (<5%)
 
@@ -589,7 +876,7 @@ Next: Continue to iteration <N+1>"
 ```
 
 ```bash
-# For iteration that FAILS (breaking point reached)
+# For iteration that FAILS (breaking point reached) - Use enhanced auto-sorted data
 COMMENT="🔴 BREAKING POINT TEST - Final Iteration <N>
 
 Service: <SERVICE_NAME>
@@ -604,9 +891,9 @@ Breaking Point Summary:
 
 Infrastructure at Breaking Point (Kubernetes):
 - Pods: <COUNT> (<RUNNING> running, <FAILED> failed)
-- CPU: <ALLOCATED> cores (<AVG_UTILIZATION>% avg, <MAX_UTILIZATION>% peak)
-- Memory: <ALLOCATED> GB (<AVG_UTILIZATION>% avg, <MAX_UTILIZATION>% peak)
-- Critical Pod: <POD_NAME> - Memory: <VALUE>% (exceeds limit)
+- CPU: <AVG_UTILIZATION>% avg, <MAX_UTILIZATION>% max  ← ENHANCED: Both values
+- Memory: <AVG_UTILIZATION>% avg, <MAX_UTILIZATION>% max  ← ENHANCED: Both values
+- Critical Pod: <POD_NAME> - CPU: <MAX_VALUE>% max (AVG: <AVG_VALUE>%)
 - Restarts: <COUNT> detected
 
 APM Metrics at Breaking Point (New Relic):
@@ -622,22 +909,39 @@ Test Results:
 - Avg response time: <VALUE>ms
 - Max response time: <VALUE>ms
 
-Slowest Endpoints (Breaking Point):
-1. <ENDPOINT_1>: <RESPONSE_TIME>ms avg (<FAILURES> failures)
-2. <ENDPOINT_2>: <RESPONSE_TIME>ms avg (<FAILURES> failures)
-3. <ENDPOINT_3>: <RESPONSE_TIME>ms avg (<FAILURES> failures)
+Top 5 Slowest Endpoints (Auto-sorted - Breaking Point):
+1. <ENDPOINT_1>: <RESPONSE_TIME>ms avg (<ERROR_RATE>% error, <FAILURES> failures)
+2. <ENDPOINT_2>: <RESPONSE_TIME>ms avg (<ERROR_RATE>% error, <FAILURES> failures)
+3. <ENDPOINT_3>: <RESPONSE_TIME>ms avg (<ERROR_RATE>% error, <FAILURES> failures)
+4. <ENDPOINT_4>: <RESPONSE_TIME>ms avg (<ERROR_RATE>% error, <FAILURES> failures)
+5. <ENDPOINT_5>: <RESPONSE_TIME>ms avg (<ERROR_RATE>% error, <FAILURES> failures)
+
+Top 5 Highest Error Rate (Auto-sorted - Breaking Point):
+1. <ENDPOINT_1>: <ERROR_RATE>% error (<RESPONSE_TIME>ms avg, <FAILURES> failures)
+2. <ENDPOINT_2>: <ERROR_RATE>% error (<RESPONSE_TIME>ms avg, <FAILURES> failures)
+3. <ENDPOINT_3>: <ERROR_RATE>% error (<RESPONSE_TIME>ms avg, <FAILURES> failures)
+4. <ENDPOINT_4>: <ERROR_RATE>% error (<RESPONSE_TIME>ms avg, <FAILURES> failures)
+5. <ENDPOINT_5>: <ERROR_RATE>% error (<RESPONSE_TIME>ms avg, <FAILURES> failures)
+
+Failure Status Codes (Auto-extracted - Breaking Point):
+- <CODE_1>: <COUNT> (<PERCENTAGE>%)  ← Dominant failure type
+- <CODE_2>: <COUNT> (<PERCENTAGE>%)
+- <CODE_3>: <COUNT> (<PERCENTAGE>%)
 
 Root Cause Analysis:
 - Primary Bottleneck: <CPU/Memory/I/O/Application>
 - Secondary Issues: <LIST>
 - Evidence:
-  * <METRIC_1>: <VALUE> indicates <ISSUE>
-  * <METRIC_2>: <VALUE> indicates <ISSUE>
+  * CPU: <AVG>% avg, <MAX>% max ← ENHANCED: Shows both
+  * Memory: <AVG>% avg, <MAX>% max ← ENHANCED: Shows both
+  * Slowest endpoint: <NAME> (<TIME>ms) ← Auto-sorted
+  * Primary failure: <STATUS_CODE> (<PERCENTAGE>%) ← Auto-extracted
+  * Highest error endpoint: <NAME> (<ERROR_RATE>%) ← Auto-sorted
 
 Test Progression:
-- Iteration 1: <USERS> users - ✅ PASS (<RT>ms, <ERR>% error, CPU <CPU>%, Mem <MEM>%)
-- Iteration 2: <USERS> users - ✅ PASS (<RT>ms, <ERR>% error, CPU <CPU>%, Mem <MEM>%)
-- Iteration <N>: <USERS> users - 🔴 FAIL (<RT>ms, <ERR>% error, CPU <CPU>%, Mem <MEM>%)
+- Iteration 1: <USERS> users - ✅ PASS (<RT>ms, <ERR>% error, CPU <AVG>%/<MAX>% avg/max, Mem <AVG>%/<MAX>% avg/max)
+- Iteration 2: <USERS> users - ✅ PASS (<RT>ms, <ERR>% error, CPU <AVG>%/<MAX>% avg/max, Mem <AVG>%/<MAX>% avg/max)
+- Iteration <N>: <USERS> users - 🔴 FAIL (<RT>ms, <ERR>% error, CPU <AVG>%/<MAX>% avg/max, Mem <AVG>%/<MAX>% avg/max)
 
 Recommendations:
 - Maximum safe load: <80% of breaking point> users
@@ -645,7 +949,9 @@ Recommendations:
   1. <ACTION_1_BASED_ON_BOTTLENECK>
   2. <ACTION_2_BASED_ON_METRICS>
   3. <ACTION_3_FOR_OPTIMIZATION>
-- Bottleneck Endpoint: <SLOWEST_ENDPOINT_NAME> (optimize this first)
+- Bottleneck Endpoint: <SLOWEST_ENDPOINT_NAME> (optimize this first) ← From Top 5 Slowest
+- High Error Endpoint: <HIGHEST_ERROR_ENDPOINT_NAME> (fix this first) ← From Top 5 Errors
+- Failure Root Cause: <PRIMARY_STATUS_CODE> indicates <ISSUE_TYPE> ← From Status Codes
 - Infrastructure Action: <SCALING_OR_RESOURCE_INCREASE>
 - Application Action: <CODE_OR_CONFIG_OPTIMIZATION>"
 ```
@@ -679,118 +985,156 @@ Continue executing **Step 2** (Complete Load Test Flow) for each planned iterati
 
 **Test Plan**: Service: subscriber-event-service | Master IP: 10.16.7.34 | Duration: 3m per iteration
 
-#### Iteration 1: 1,000 Users
+#### Iteration 1: 1,000 Users (Using Enhanced Scripts)
 
 ```bash
 # Step 1: Run test
 node jenkins-client.js build "Locust - Test Runner" Master_IP=10.16.7.34 Users=1000 RampUp=17 Duration=3m
 node jenkins-client.js wait "Locust - Test Runner" 426
 
-# Step 2: Fetch report (auto-saved)
-node inspect-data.js "D:\PerformanceAI\Reports\result.html"
-# Output: duration="3 minutes", requests=15000, failures=0, avg_response=250ms
+# Step 2: Fetch report and extract metadata (ENHANCED)
+node inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" text
+# Output: 
+# - Start: 1776753000, End: 1776753180, Buffer: 1776753240
+# - Duration: 180s (240s with buffer)
+# - Requests: 15,000, Failures: 0 (0%)
+# - Avg response: 250ms
+# - Failure Status Codes: None
+# - Top 5 Slowest: Get_Profile (280ms), Get_History (240ms), Post_Event (220ms)
+# - Top 5 Highest Error Rate: All 0%
 
 # Wait 1 minute for metrics to stabilize
 Start-Sleep -Seconds 60
 
-# Step 3: Collect metrics (using test duration: 3 minutes)
-node get-pod-metrics.js subscriber-event-service 3
-# Output: 20 pods, CPU: 15% avg, Memory: 45% avg, No restarts
+# Step 3: Collect metrics with EXACT TIMESTAMPS (ENHANCED)
+node get-pod-metrics-enhanced.js subscriber-event-service 1776753000 1776753240
+# Output: 20 pods, CPU: 15% avg / 18% max, Memory: 45% avg / 48% max, No restarts
 
-node get-apm-metrics.js subscriber-event 3
+node get-apm-metrics-enhanced.js subscriber-event 1776753000 1776753240 5
 # Output: Response time: 250ms avg, Throughput: 5000 rpm, Error rate: 0%
+# - Top 5 Slowest: /api/get-profile (280ms), /api/get-history (240ms), /api/post-event (220ms)...
+# - Top 5 Highest Error Rate: All 0%
 
-# Step 4: Check breaking point
+# Step 4: Check breaking point (ENHANCED)
 # ✅ Response time: 250ms (<1000ms) - PASS
-# ✅ CPU: 15% (<80%) - PASS
-# ✅ Memory: 45% (<80%) - PASS
+# ✅ MAX CPU: 18% (<80%) - PASS  ← Check MAX, not AVG
+# ✅ MAX Memory: 48% (<80%) - PASS  ← Check MAX, not AVG
 # ✅ Error rate: 0% (<5%) - PASS
 # ✅ No pod restarts - PASS
 # Decision: CONTINUE
 
-# Step 5: Upload results
-node upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 1000 --rampup "60 seconds" --targettps 17 --comment "✅ Breaking Point Test - Iteration 1`nService: subscriber-event-service`nLoad: 1,000 users`n`nInfrastructure:`n- Pods: 20`n- CPU: 4 cores (15% avg)`n- Memory: 4 GB (45% avg)`n`nTest Results:`n- Total requests: 15,000`n- Total failures: 0 (0%)`n- Avg response time: 250ms`n- P95: 320ms`n- Slowest endpoint: /api/get-profile (280ms avg)`n`nStatus: ✅ PASS - All criteria met`nNext: Continue to iteration 2"
+# Step 5: Upload results (using auto-extracted enhanced data)
+node upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 1000 --rampup "60 seconds" --targettps 17 --comment "✅ Breaking Point Test - Iteration 1`nService: subscriber-event-service`nLoad: 1,000 users`n`nInfrastructure:`n- Pods: 20`n- CPU: 15% avg, 18% max  ← ENHANCED: Both values`n- Memory: 45% avg, 48% max  ← ENHANCED: Both values`n`nTest Results:`n- Total requests: 15,000`n- Total failures: 0 (0%)`n- Avg response time: 250ms`n- P95: 320ms`n`nTop 3 Slowest Endpoints:`n1. GET /api/get-profile: 280ms avg (0% error, 5,000 requests)`n2. GET /api/get-history: 240ms avg (0% error, 4,000 requests)`n3. POST /api/post-event: 220ms avg (0% error, 6,000 requests)`n`nStatus: ✅ PASS - All criteria met`nNext: Continue to iteration 2"
 
 # Wait 3 minutes for cooldown
 Start-Sleep -Seconds 180
 ```
 
-#### Iteration 2: 5,000 Users
+#### Iteration 2: 5,000 Users (Using Enhanced Scripts)
 
 ```bash
 # Step 1: Run test
 node jenkins-client.js build "Locust - Test Runner" Master_IP=10.16.7.34 Users=5000 RampUp=84 Duration=3m
 node jenkins-client.js wait "Locust - Test Runner" 427
 
-# Step 2: Fetch report
-node inspect-data.js "D:\PerformanceAI\Reports\result.html"
-# Output: duration="3 minutes", requests=75000, failures=120, avg_response=450ms
+# Step 2: Fetch report and extract metadata (ENHANCED)
+node inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" text
+# Output:
+# - Start: 1776754000, End: 1776754180, Buffer: 1776754240
+# - Duration: 180s (240s with buffer)
+# - Requests: 75,000, Failures: 120 (0.16%)
+# - Avg response: 450ms
+# - Failure Status Codes: 504 (80, 66.7%), 500 (25, 20.8%), 503 (15, 12.5%)
+# - Top 5 Slowest: Get_History (820ms), Search_Content (650ms), Get_Recommendations (580ms)
+# - Top 5 Highest Error Rate: Get_History (5.3%), Search_Content (2.1%), Get_Recommendations (1.5%)
 
 # Wait 1 minute for metrics to stabilize
 Start-Sleep -Seconds 60
 
-# Step 3: Collect metrics (using test duration: 3 minutes)
-node get-pod-metrics.js subscriber-event-service 3
-# Output: 20 pods, CPU: 35% avg, Memory: 60% avg, No restarts
+# Step 3: Collect metrics with EXACT TIMESTAMPS (ENHANCED)
+node get-pod-metrics-enhanced.js subscriber-event-service 1776754000 1776754240
+# Output: 20 pods, CPU: 35% avg / 42% max, Memory: 60% avg / 68% max, No restarts
 
-node get-apm-metrics.js subscriber-event 3
+node get-apm-metrics-enhanced.js subscriber-event 1776754000 1776754240 5
 # Output: Response time: 450ms avg, Throughput: 25000 rpm, Error rate: 0.16%
+# - Top 5 Slowest: /api/get-history (820ms), /api/search-content (650ms), /api/get-recommendations (580ms)...
+# - Top 5 Highest Error Rate: /api/get-history (5.3%), /api/search-content (2.1%)...
 
-# Step 4: Check breaking point
+# Step 4: Check breaking point (ENHANCED)
 # ✅ Response time: 450ms (<1000ms) - PASS
-# ✅ CPU: 35% (<80%) - PASS
-# ✅ Memory: 60% (<80%) - PASS
+# ✅ MAX CPU: 42% (<80%) - PASS  ← Check MAX, not AVG
+# ✅ MAX Memory: 68% (<80%) - PASS  ← Check MAX, not AVG
 # ✅ Error rate: 0.16% (<5%) - PASS
 # ✅ No pod restarts - PASS
 # Decision: CONTINUE
 
-# Step 5: Upload results
-node upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 5000 --rampup "60 seconds" --targettps 84 --comment "✅ Breaking Point Test - Iteration 2`nService: subscriber-event-service`nLoad: 5,000 users`n`nInfrastructure:`n- Pods: 20`n- CPU: 4 cores (35% avg)`n- Memory: 4 GB (60% avg)`n`nTest Results:`n- Total requests: 75,000`n- Total failures: 120 (0.16%)`n- Avg response time: 450ms`n- P95: 670ms`n- Slowest endpoint: /api/get-history (820ms avg)`n`nStatus: ✅ PASS - All criteria met`nNext: Continue to iteration 3"
+# Step 5: Upload results (using auto-extracted enhanced data)
+node upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 5000 --rampup "60 seconds" --targettps 84 --comment "✅ Breaking Point Test - Iteration 2`nService: subscriber-event-service`nLoad: 5,000 users`n`nInfrastructure:`n- Pods: 20`n- CPU: 35% avg, 42% max  ← ENHANCED: Both values`n- Memory: 60% avg, 68% max  ← ENHANCED: Both values`n`nTest Results:`n- Total requests: 75,000`n- Total failures: 120 (0.16%)`n- Avg response time: 450ms`n- P95: 670ms`n`nTop 3 Slowest Endpoints:`n1. GET /api/get-history: 820ms avg (5.3% error, 15,000 requests)`n2. GET /api/search-content: 650ms avg (2.1% error, 12,000 requests)`n3. GET /api/get-recommendations: 580ms avg (1.5% error, 10,000 requests)`n`nTop 3 Highest Error Rate:`n1. GET /api/get-history: 5.3% error (820ms avg, 15,000 requests)`n2. GET /api/search-content: 2.1% error (650ms avg, 12,000 requests)`n3. GET /api/get-recommendations: 1.5% error (580ms avg, 10,000 requests)`n`nFailure Status Codes:`n- 504 Gateway Timeout: 80 (66.7%)  ← Primary issue`n- 500 Internal Server Error: 25 (20.8%)`n- 503 Service Unavailable: 15 (12.5%)`n`nStatus: ✅ PASS - All criteria met`nNext: Continue to iteration 3"
 
 # Wait 3 minutes for cooldown
 Start-Sleep -Seconds 180
 ```
 
-#### Iteration 3: 10,000 Users (Breaking Point Reached)
+#### Iteration 3: 10,000 Users (Breaking Point Reached - Using Enhanced Scripts)
 
 ```bash
 # Step 1: Run test
 node jenkins-client.js build "Locust - Test Runner" Master_IP=10.16.7.34 Users=10000 RampUp=167 Duration=3m
 node jenkins-client.js wait "Locust - Test Runner" 428
 
-# Step 2: Fetch report
-node inspect-data.js "D:\PerformanceAI\Reports\result.html"
-# Output: duration="3 minutes", requests=150000, failures=2500, avg_response=1250ms
+# Step 2: Fetch report and extract metadata (ENHANCED)
+node inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" text
+# Output:
+# - Start: 1776755000, End: 1776755180, Buffer: 1776755240
+# - Duration: 180s (240s with buffer)
+# - Requests: 150,000, Failures: 2,500 (1.67%)
+# - Avg response: 1250ms
+# - Failure Status Codes: 504 (1800, 72%), 503 (500, 20%), 500 (200, 8%)
+# - Top 5 Slowest: Get_History (1850ms), Search_Content (1450ms), Get_Recommendations (1150ms)
+# - Top 5 Highest Error Rate: Get_History (8.0%), Search_Content (6.7%), Get_Recommendations (5.0%)
 
 # Wait 1 minute for metrics to stabilize
 Start-Sleep -Seconds 60
 
-# Step 3: Collect metrics (using test duration: 3 minutes)
-node get-pod-metrics.js subscriber-event-service 3
-# Output: 20 pods, CPU: 75% avg, Memory: 82% avg, No restarts
+# Step 3: Collect metrics with EXACT TIMESTAMPS (ENHANCED)
+node get-pod-metrics-enhanced.js subscriber-event-service 1776755000 1776755240
+# Output: 20 pods, CPU: 75% avg / 82% max, Memory: 76% avg / 84% max, No restarts
 
-node get-apm-metrics.js subscriber-event 3
+node get-apm-metrics-enhanced.js subscriber-event 1776755000 1776755240 5
 # Output: Response time: 1250ms avg, Throughput: 48000 rpm, Error rate: 1.67%
+# - Top 5 Slowest: /api/get-history (1850ms), /api/search-content (1450ms), /api/get-recommendations (1150ms)...
+# - Top 5 Highest Error Rate: /api/get-history (8.0%), /api/search-content (6.7%)...
 
-# Step 4: Check breaking point
+# Step 4: Check breaking point (ENHANCED)
 # 🔴 Response time: 1250ms (>1000ms) - FAIL
-# ✅ CPU: 75% (<80%) - PASS
-# 🔴 Memory: 82% (>80%) - FAIL
+# ✅ MAX CPU: 82% (>80%) - MARGINAL (close to limit)  ← Check MAX, not AVG
+# 🔴 MAX Memory: 84% (>80%) - FAIL  ← Check MAX, not AVG
 # ✅ Error rate: 1.67% (<5%) - PASS
 # ✅ No pod restarts - PASS
 # Decision: BREAKING POINT REACHED - STOP
 
-# Step 5: Upload final breaking point report
-node upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 10000 --rampup "60 seconds" --targettps 167 --comment "🔴 BREAKING POINT TEST - Final Iteration 3`n`nService: subscriber-event-service`nLoad: 10,000 users`n`nBreaking Point Summary:`n- Maximum Stable Load: 5,000 users`n- Breaking Point Load: 10,000 users`n- Criteria Met:`n  * Response Time: 1250ms (Threshold: 1000ms) 🔴`n  * Memory: 82% (Threshold: 80%) 🔴`n`nInfrastructure at Breaking Point:`n- Pods: 20`n- CPU: 4 cores (75% utilized)`n- Memory: 4 GB (82% utilized)`n`nSlowest Endpoints:`n1. /api/get-history: 1850ms avg (1200 failures)`n2. /api/search-content: 1450ms avg (800 failures)`n3. /api/get-recommendations: 1150ms avg (500 failures)`n`nTest Progression:`n- Iteration 1: 1,000 users - ✅ PASS (250ms, CPU 15%, Mem 45%)`n- Iteration 2: 5,000 users - ✅ PASS (450ms, CPU 35%, Mem 60%)`n- Iteration 3: 10,000 users - 🔴 FAIL (1250ms, CPU 75%, Mem 82%)`n`nRecommendations:`n- Maximum safe load: 8,000 users (80% of breaking point)`n- Bottleneck endpoint: /api/get-history (optimize database query first)`n- Infrastructure bottleneck: Memory pressure causing GC overhead`n- Actions: 1) Optimize /api/get-history query, 2) Increase memory to 6GB per pod, or 3) Scale to 30 pods"
+# Step 5: Upload final breaking point report (using auto-extracted enhanced data)
+node upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 10000 --rampup "60 seconds" --targettps 167 --comment "🔴 BREAKING POINT TEST - Final Iteration 3`n`nService: subscriber-event-service`nLoad: 10,000 users`n`nBreaking Point Summary:`n- Maximum Stable Load: 5,000 users`n- Breaking Point Load: 10,000 users`n- Criteria Met:`n  * Response Time: 1250ms (Threshold: 1000ms) 🔴`n  * MAX Memory: 84% (Threshold: 80%) 🔴`n`nInfrastructure at Breaking Point:`n- Pods: 20`n- CPU: 75% avg, 82% max  ← ENHANCED: Both values (approaching limit)`n- Memory: 76% avg, 84% max  ← ENHANCED: Both values (exceeds threshold)`n`nTop 5 Slowest Endpoints:`n1. GET /api/get-history: 1850ms avg (8.0% error, 1200 failures)`n2. GET /api/search-content: 1450ms avg (6.7% error, 800 failures)`n3. GET /api/get-recommendations: 1150ms avg (5.0% error, 500 failures)`n4. GET /api/user-profile: 950ms avg (0.5% error, 50 failures)`n5. POST /api/post-event: 850ms avg (0.2% error, 20 failures)`n`nTop 5 Highest Error Rate:`n1. GET /api/get-history: 8.0% error (1850ms avg, 15,000 requests)`n2. GET /api/search-content: 6.7% error (1450ms avg, 12,000 requests)`n3. GET /api/get-recommendations: 5.0% error (1150ms avg, 10,000 requests)`n4. GET /api/user-profile: 0.5% error (950ms avg, 18,000 requests)`n5. POST /api/post-event: 0.2% error (850ms avg, 20,000 requests)`n`nFailure Status Codes:`n- 504 Gateway Timeout: 1800 (72%)  ← Backend database saturation`n- 503 Service Unavailable: 500 (20%)  ← Service overload`n- 500 Internal Server Error: 200 (8%)`n`nTest Progression:`n- Iteration 1: 1,000 users - ✅ PASS (250ms, 0% error, CPU 15%/18% avg/max, Mem 45%/48% avg/max)`n- Iteration 2: 5,000 users - ✅ PASS (450ms, 0.16% error, CPU 35%/42% avg/max, Mem 60%/68% avg/max)`n- Iteration 3: 10,000 users - 🔴 FAIL (1250ms, 1.67% error, CPU 75%/82% avg/max, Mem 76%/84% avg/max)`n`nRoot Cause Analysis:`n- Primary Bottleneck: Database I/O (backend timeout)`n- Evidence:`n  * CPU/Memory healthy on avg (75%/76%) but MAX hits limit (82%/84%)`n  * 504 timeouts (72%) indicate backend database saturation`n  * Slowest endpoints all DB-heavy operations (get-history: 1850ms)`n  * Response times degrade exponentially (not linearly)`n`nRecommendations:`n- Maximum safe load: 8,000 users (80% of breaking point)`n- Bottleneck Endpoint: /api/get-history (1850ms avg, 8% error) - optimize first`n- High Error Endpoint: /api/get-history (8.0% error) - fix database queries`n- Failure Root Cause: 504 Gateway Timeout (72%) indicates backend database I/O bottleneck`n- Infrastructure: MAX Memory 84% suggests increase to 6GB per pod OR scale to 30 pods`n- Application: Add database indexes on history table, implement query caching, add connection pooling"
 
 # Test complete - breaking point identified at 10,000 users
 ```
 
-### Automation Tips
+### Automation Tips (Enhanced Scripts)
 
 **Calculate RampUp for each iteration**:
 - Use system-specific formula: RampUp = Users / Ramp-up duration (seconds)
 - For 60-second ramp-up: RampUp = Users / 60
+
+**Use enhanced scripts for accurate data collection**:
+- **inspect-data-enhanced.js**: Extracts exact timestamps, failure codes, top 5 sorting
+- **get-pod-metrics-enhanced.js**: Shows AVG/MAX CPU/Memory (solves 76% vs 99% discrepancy)
+- **get-apm-metrics-enhanced.js**: Transaction sorting by duration and error rate
+
+**Exact timestamp workflow**:
+1. Run test via Jenkins
+2. Extract startEpoch, endEpoch, bufferEndEpoch from inspect-data-enhanced.js
+3. Use exact epochs for get-pod-metrics-enhanced.js and get-apm-metrics-enhanced.js
+4. All metrics aligned to same time range (no "last N minutes" drift)
 
 **Consistent test duration**:
 - Recommended: 3-5 minutes per iteration
@@ -798,8 +1142,8 @@ node upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "1ngm
 
 **Metrics collection timing**:
 - Always wait 1 minute after test completion before collecting metrics
-- Use actual test duration from result.html (not hardcoded values)
-- This ensures metrics accurately reflect test period
+- Use exact epochs from inspect-data-enhanced.js (includes 60s buffer automatically)
+- This ensures metrics accurately reflect test period + stabilization
 
 **Wait time between iterations**:
 - Allow 2-3 minutes between tests for system cooldown
@@ -808,6 +1152,7 @@ node upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "1ngm
 **Document all iterations**:
 - Upload results after EACH iteration to track progression
 - Use 6 blank lines separation between results in Google Sheet
+- Include AVG/MAX for CPU and Memory in every comment
 
 ### Notes
 - Breaking point tests consume significant resources - coordinate with infrastructure team
