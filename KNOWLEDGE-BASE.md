@@ -336,6 +336,10 @@ node send-email-report.js --to "<EMAIL>" --subject "<SUBJECT>" --report "<PATH_T
 - `--attach <paths>` - Additional attachments (optional, comma-separated paths)
 - `--config <path>` - Config file path (default: config.json)
 - `--template <style>` - Email template: basic|detailed (default: detailed)
+- `--service-name <name>` - Service name being tested (optional)
+- `--pods <number>` - Number of pods running (optional)
+- `--cpu <value>` - CPU per pod, e.g., "3 cores" or "3000m" (optional)
+- `--memory <value>` - Memory per pod, e.g., "3000 MB" or "3 GB" (optional)
 
 ### Email Templates
 
@@ -346,13 +350,25 @@ node send-email-report.js --to "<EMAIL>" --subject "<SUBJECT>" --report "<PATH_T
 - Clean and minimal design
 
 **Detailed Template (Recommended):**
-- Professional gradient header
+- Professional gradient header with status badges
+- **Infrastructure Configuration section** (yellow-themed card)
+  - Service Name
+  - Pods Running
+  - CPU per Pod
+  - Memory per Pod
+- **Test Configuration section** (green-themed card, auto-extracted)
+  - Concurrent Users (peak)
+  - Ramp-up Rate (users/second)
+  - Test Duration
+  - Test Period (start/end timestamps)
 - Auto-extracted metrics summary
   - Total Requests
   - Total Failures & Failure Rate
   - Average Response Time
+  - Throughput (RPS)
+- **Endpoint Performance Table** with P90, P95 percentiles
 - Visual status badges (✅ PASS / 🔴 FAIL)
-- Color-coded metrics (green for pass, red for fail)
+- Color-coded metrics (green/yellow/red for performance indicators)
 - Custom analysis section with formatting
 - Multiple attachments support
 - Professional footer with branding
@@ -424,6 +440,26 @@ Included files:
 Test passed all SLA criteria. Ready for production."
 ```
 
+#### Email with Infrastructure Details
+```bash
+node send-email-report.js \
+  --to "team@example.com" \
+  --subject "Load Test Results - Search Proxy Service" \
+  --report "D:\PerformanceAI\Reports\result.html" \
+  --service-name "search-proxy" \
+  --pods 15 \
+  --cpu "3 cores" \
+  --memory "3000 MB" \
+  --body "Load test results with infrastructure configuration for search-proxy service.
+
+Infrastructure Capacity:
+- 15 pods deployed
+- Each pod: 3 CPU cores, 3000 MB memory
+- Total capacity: 45 cores, 45 GB RAM
+
+Test Result: System handled 20K users successfully with <1% error rate."
+```
+
 #### Basic Template Email
 ```bash
 node send-email-report.js \
@@ -483,6 +519,12 @@ npm install nodemailer
 ### Auto-Extracted Metrics
 
 The script automatically extracts and displays:
+
+**Infrastructure Configuration (🏗️ Optional via command-line):**
+- 🏢 **Service Name** - Name of the service being tested
+- 📦 **Pods Running** - Number of Kubernetes pods deployed
+- 🔧 **CPU per Pod** - CPU allocation per pod (e.g., "3 cores" or "3000m")
+- 💾 **Memory per Pod** - Memory allocation per pod (e.g., "3000 MB" or "3 GB")
 
 **Test Configuration (⚙️ Auto-extracted from HTML report):**
 - 👥 **Concurrent Users** - Peak number of concurrent users during the test

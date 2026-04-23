@@ -162,6 +162,15 @@ Examples:
     --subject "Load Test Results" \\
     --report "result.html" \\
     --attach "metrics.json,grafana-screenshot.png"
+
+  # With infrastructure details
+  node send-email-report.js --to "team@example.com" \\
+    --subject "Load Test Results" \\
+    --report "result.html" \\
+    --service-name "search-proxy" \\
+    --pods 15 \\
+    --cpu "3 cores" \\
+    --memory "3000 MB"
 `);
 }
 

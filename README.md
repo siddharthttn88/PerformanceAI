@@ -594,6 +594,16 @@ node send-email-report.js \
   --report "D:\PerformanceAI\Reports\result.html" \
   --attach "metrics.json,grafana-dashboard.png"
 
+# With infrastructure details
+node send-email-report.js \
+  --to "team@example.com" \
+  --subject "Load Test Results - Search Proxy Service" \
+  --report "D:\PerformanceAI\Reports\result.html" \
+  --service-name "search-proxy" \
+  --pods 15 \
+  --cpu "3 cores" \
+  --memory "3000 MB"
+
 # Using basic template (minimal)
 node send-email-report.js \
   --to "stakeholder@example.com" \
@@ -611,6 +621,10 @@ node send-email-report.js \
 - `--attach <paths>` - Additional attachments (optional, comma-separated)
 - `--config <path>` - Config file path (default: config.json)
 - `--template <style>` - Email template: basic|detailed (default: detailed)
+- `--service-name <name>` - Service name being tested (optional)
+- `--pods <number>` - Number of pods running (optional)
+- `--cpu <value>` - CPU per pod, e.g., "3 cores" or "3000m" (optional)
+- `--memory <value>` - Memory per pod, e.g., "3000 MB" or "3 GB" (optional)
 
 **Email Templates:**
 
@@ -1216,10 +1230,11 @@ Read data from Google Sheets:
 
 ### 9. send-email-report.js
 Send load test reports via email:
+- **Infrastructure details support** (service name, pods, CPU, memory per pod)
 - **Auto-extracts test configuration** (users, ramp-up rate, duration) from HTML reports
 - Professional HTML email templates (basic & detailed)
 - Auto-extract comprehensive metrics: requests, failures, response times, endpoints
-- Displays test execution parameters in dedicated configuration section
+- Displays infrastructure and test execution parameters in dedicated configuration sections
 - **Endpoint performance table with P90, P95 percentiles** and color-coded indicators
 - Multiple recipients and CC support
 - Flexible attachment handling
