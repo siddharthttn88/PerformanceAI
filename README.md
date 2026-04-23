@@ -6,8 +6,45 @@ This project provides JavaScript libraries to:
 - **Grafana/Prometheus**: Fetch dashboard, monitoring details, and metrics (read-only)
 - **New Relic**: Query APM data and observability metrics (read-only)
 - **Jenkins**: Execute and monitor CI/CD jobs (read + execute)
+- **Email Reports**: Send load test reports with professional HTML formatting
+- **Google Sheets**: Export Locust results with auto SLA detection
 
 Grafana and New Relic scripts have write operations blocked at the client level for safety.
+
+## 🚀 Quick Start
+
+### Installation
+
+1. **Clone the repository**
+```bash
+git clone <repository-url>
+cd PerformanceAI
+```
+
+2. **Install dependencies**
+```bash
+npm install
+```
+
+3. **Configure credentials**
+```bash
+# Copy template files
+cp config.example.json config.json
+cp credentials.example.json credentials.json
+
+# Edit with your credentials
+code config.json
+code credentials.json
+```
+
+4. **Verify setup**
+```bash
+# Test connections
+node grafana-reader.js health
+node newrelic-client.js account
+```
+
+📚 **For detailed setup instructions, see [SETUP.md](SETUP.md)**
 
 ## Features
 
@@ -94,6 +131,8 @@ All operations are **read-only** and safe to use without modifying your monitori
 - Support for test metadata (users, TPS, ramp-up, status, comments)
 
 ## Configuration
+
+**📝 First-time setup:** Copy `config.example.json` to `config.json` and `credentials.example.json` to `credentials.json`, then edit with your credentials. See [SETUP.md](SETUP.md) for detailed instructions.
 
 The script reads configuration from `config.json`:
 

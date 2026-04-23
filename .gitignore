@@ -5,6 +5,8 @@ credentials.json
 # Exported dashboard files (may contain sensitive data)
 *.json
 !package.json
+!config.example.json
+!credentials.example.json
 
 # Node modules
 node_modules/

@@ -1,0 +1,46 @@
+{
+  "mcpServers": {
+    "newrelic": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "newrelic-mcp"
+      ],
+      "env": {
+        "NEW_RELIC_API_KEY": "NRAK-YOUR_API_KEY_HERE",
+        "NEW_RELIC_ACCOUNT_ID": "YOUR_ACCOUNT_ID",
+        "NEW_RELIC_REGION": "US"
+      }
+    },
+    "grafana": {
+      "command": "mcp-grafana",
+      "args": [],
+      "env": {
+        "GRAFANA_URL": "http://your-grafana-server:3000/",
+        "GRAFANA_SERVICE_ACCOUNT_TOKEN": "glsa_YOUR_SERVICE_ACCOUNT_TOKEN_HERE"
+      }
+    },
+    "jenkins": {
+      "baseUrl": "http://your-jenkins-server:8080",
+      "username": "your-jenkins-username",
+      "apiToken": "your-jenkins-api-token"
+    }
+  },
+  "preferences": {
+    "coworkScheduledTasksEnabled": false,
+    "sidebarMode": "chat",
+    "coworkWebSearchEnabled": true,
+    "ccdScheduledTasksEnabled": false
+  },
+  "email": {
+    "service": "gmail",
+    "host": "smtp.gmail.com",
+    "port": 587,
+    "secure": false,
+    "auth": {
+      "user": "your-email@gmail.com",
+      "pass": "your-gmail-app-password"
+    },
+    "from": "Load Test Reports <your-email@gmail.com>"
+  }
+}
