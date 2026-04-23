@@ -294,18 +294,27 @@ node get-apm-metrics.js learn-action 10
 ```
 
 #### Jenkins Operations
+
+The toolkit supports multiple Jenkins instances. Use the `--jenkins` flag to specify which instance to use.
+
 ```bash
-# List all jobs
+# List all jobs (default: jenkins-local)
 node jenkins-client.js list
+
+# List jobs from specific Jenkins instance
+node jenkins-client.js --jenkins=jenkins-local list
+node jenkins-client.js --jenkins=jenkins-locust list
 
 # Get job details
 node jenkins-client.js info <job-name>
+node jenkins-client.js --jenkins=jenkins-locust info load-test-locust-asg
 
 # Trigger a build (no parameters)
 node jenkins-client.js build <job-name>
 
 # Trigger a parameterized build
 node jenkins-client.js build <job-name> PARAM1=value1 PARAM2=value2
+node jenkins-client.js --jenkins=jenkins-locust build load-test-locust-asg MIN_SIZE=31 MAX_SIZE=31
 
 # Get build status
 node jenkins-client.js status <job-name> [build-number]
@@ -321,11 +330,16 @@ node jenkins-client.js build-wait <job-name> [PARAM=value ...]
 
 # Examples:
 node jenkins-client.js list
-node jenkins-client.js build my-deployment-job
+node jenkins-client.js --jenkins=jenkins-local build "Locust - Test Runner" Master_IP=10.16.7.202 Users=1000
+node jenkins-client.js --jenkins=jenkins-locust build load-test-locust-asg MIN_SIZE=31 MAX_SIZE=31 DESIRED_CAPACITY=31
 node jenkins-client.js build my-job BRANCH=main ENV=production
 node jenkins-client.js status my-job 42
 node jenkins-client.js build-wait deployment BRANCH=develop REGION=us-east-1
 ```
+
+**Jenkins Instances:**
+- `jenkins-local` (default): http://localhost:8080 - For test execution and general CI/CD
+- `jenkins-locust`: http://jenkins.vrgo.dev.xp.irdeto.com/ - For EC2 infrastructure provisioning
 
 #### Locust Report to Google Sheets
 
@@ -618,11 +632,27 @@ node send-email-report.js \
 - Minimal styling for quick updates
 
 **Auto-Extracted Metrics:**
+
+The script automatically extracts comprehensive data from the HTML report:
+
+*Test Configuration:*
+- 👥 Concurrent Users (peak user count)
+- 📈 Ramp-up Rate (users/second)
+- ⏱️ Test Duration
+- 📅 Test Period (start/end timestamps)
+
+*Performance Metrics:*
 - Total Requests
 - Total Failures
 - Failure Rate (%)
 - Average Response Time
+- Throughput (RPS)
 - Test Status (PASS/FAIL based on SLA criteria)
+
+*Per-Endpoint Metrics (Top 10):*
+- Request count and failure rate
+- Avg, Median, P90, P95, P99 response times
+- Requests per second with color coding
 
 **Email Configuration (One-time Setup):**
 
@@ -1186,25 +1216,140 @@ Read data from Google Sheets:
 
 ### 9. send-email-report.js
 Send load test reports via email:
+- **Auto-extracts test configuration** (users, ramp-up rate, duration) from HTML reports
 - Professional HTML email templates (basic & detailed)
-- Auto-extract metrics from HTML reports
+- Auto-extract comprehensive metrics: requests, failures, response times, endpoints
+- Displays test execution parameters in dedicated configuration section
+- **Endpoint performance table with P90, P95 percentiles** and color-coded indicators
 - Multiple recipients and CC support
 - Flexible attachment handling
 - Gmail, Outlook, and custom SMTP support
 - SLA-based PASS/FAIL status determination
 
 ### 10. jenkins-client.js
-Jenkins CI/CD integration:
-- List and trigger jobs
+Jenkins CI/CD integration with multi-instance support:
+- List and trigger jobs across multiple Jenkins servers
+- Multi-instance support via --jenkins flag (jenkins-local, jenkins-locust)
 - Monitor build status
 - Get console output
 - Parameterized builds
 - Wait for completion
+- Separate instances for test execution and infrastructure provisioning
 
-### 11. config.json
+### 11. debug-html.js
+Diagnostic tool for Locust HTML report analysis:
+- Extracts window.templateArgs JSON from HTML reports
+- Implements brace-counting parser for complete JSON extraction
+- Saves extracted data to extracted-data.json for inspection
+- Useful for debugging email report extraction issues
+- Displays test summary: requests, failures, response times
+
+```bash
+# Analyze Locust HTML report and extract JSON data
+node debug-html.js
+
+# Output saved to: extracted-data.json
+# Console displays: Test duration, request counts, failure rates, endpoints
+```
+
+### 12. list-services.js
+List all monitored services across platforms:
+- Lists New Relic APM applications (reporting/not reporting)
+- Lists Kubernetes services from Prometheus metrics
+- Extracts unique service names from pod labels
+- Shows service count and availability status
+- Useful for discovering monitored services
+
+```bash
+# List all services from New Relic and Kubernetes
+node list-services.js
+
+# Output example:
+# === NEW RELIC APM SERVICES ===
+# 📊 Total Applications: 45
+# ✅ Reporting (32):
+#    - subscriber-event-service
+#    - api-gateway
+#    ...
+# ⚫ Not Reporting (13):
+#    - old-service
+#    ...
+#
+# === KUBERNETES SERVICES (Prometheus) ===
+# 📦 Total Services: 28
+#    - subscriber-event-service
+#    - learn-action-service
+#    ...
+```
+
+### 13. upload-results-clean.js
+Simplified Locust report uploader:
+- Basic Google Sheets upload without advanced formatting
+- Minimal dependencies and simpler code structure
+- Direct JSON parsing without CLI options
+- Use for quick data exports without formatting needs
+- Alternative to upload-with-Locust_Template.js
+
+```bash
+# Simple upload (requires positional arguments only)
+node upload-results-clean.js "D:\PerformanceAI\Reports\result.html" "<spreadsheet-id>"
+
+# No command-line flags, straightforward usage
+```
+
+### 14. get-pod-metrics-enhanced.js
+Enhanced Kubernetes metrics with AVG/MAX values:
+- Shows both average and maximum CPU/Memory utilization
+- Uses exact epoch timestamps for precise queries
+- Prometheus range queries for historical analysis
+- Per-pod breakdown with AVG and MAX values
+- Solves discrepancies between current and peak usage
+
+```bash
+# Using exact epoch timestamps (recommended)
+node get-pod-metrics-enhanced.js subscriber-event-service 1776753979 1776754339
+
+# Using duration in minutes (legacy compatibility)
+node get-pod-metrics-enhanced.js subscriber-event-service 5
+```
+
+### 15. get-apm-metrics-enhanced.js
+Enhanced APM metrics with transaction sorting:
+- Top N slowest transactions (sorted by avg_duration)
+- Top N highest error rate (sorted by error_rate)
+- Uses exact SINCE/UNTIL timestamps for precise NRQL queries
+- Configurable top-N parameter (default: 10)
+- HTTP status code breakdown
+
+```bash
+# Using exact epoch timestamps with top 5 (recommended)
+node get-apm-metrics-enhanced.js subscriber-event 1776753979 1776754339 5
+
+# Using duration in minutes
+node get-apm-metrics-enhanced.js subscriber-event 5 10
+```
+
+### 16. inspect-data-enhanced.js
+Enhanced test report analysis:
+- Extracts comprehensive metadata from Locust HTML reports
+- Exact timestamps (ISO and epoch formats)
+- Failure status codes breakdown (504, 401, 404, etc.)
+- Top 5 slowest endpoints by response time
+- Top 5 highest error rate endpoints
+- Dual output formats (text/JSON)
+
+```bash
+# Text output (human-readable)
+node inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" text
+
+# JSON output (machine-readable for scripts)
+node inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" json
+```
+
+### 17. config.json
 Configuration file for Grafana, New Relic, Jenkins, and Email settings (see Configuration section above).
 
-### 12. .gitignore
+### 18. .gitignore
 Pre-configured to exclude sensitive files:
 - config.json (credentials)
 - Exported dashboard JSON files

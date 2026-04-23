@@ -483,11 +483,26 @@ npm install nodemailer
 ### Auto-Extracted Metrics
 
 The script automatically extracts and displays:
+
+**Test Configuration (⚙️ Auto-extracted from HTML report):**
+- 👥 **Concurrent Users** - Peak number of concurrent users during the test
+- 📈 **Ramp-up Rate** - Users added per second (calculated from test history)
+- ⏱️ **Test Duration** - Total test duration (e.g., "7 minutes and 39 seconds")
+- 📅 **Test Period** - Start and end timestamps in local timezone
+
+**Performance Metrics:**
 - Total Requests
 - Total Failures
 - Failure Rate (%)
 - Average Response Time
+- Throughput (RPS)
 - Test Status (PASS/FAIL based on SLA)
+
+**Per-Endpoint Metrics (Top 10):**
+- Request count and failure rate
+- Average, Median, P90, P95, P99 response times
+- Requests per second (RPS)
+- Color-coded performance indicators
 
 **SLA Criteria (Auto-determined):**
 - FAIL if average response time > 1000ms
@@ -495,6 +510,12 @@ The script automatically extracts and displays:
 - PASS if both criteria met
 
 ### Email Features
+
+✅ **Auto-Extracted Test Configuration (NEW!)**
+- Automatically extracts and displays test execution parameters
+- Shows concurrent users, ramp-up rate, test duration
+- Displays test start/end times in local timezone
+- No manual input required - all data from HTML report
 
 ✅ **Professional HTML Templates**
 - Responsive design
@@ -506,6 +527,7 @@ The script automatically extracts and displays:
 - Extracts key metrics from HTML report
 - Calculates failure rates
 - Determines PASS/FAIL status
+- Shows top 10 endpoints with detailed metrics
 
 ✅ **Multiple Recipients**
 - Send to multiple recipients (comma-separated)
@@ -601,9 +623,58 @@ Next Steps: Proceed to 10K user test."
 
 ---
 
-## 3. Jenkins Jobs - Locust Load Testing
+## 3. Jenkins Configurations & Jobs
+
+### Jenkins Instances
+
+The toolkit supports multiple Jenkins instances configured in `config.json`:
+
+#### jenkins-local
+**Purpose**: Local Jenkins server for general CI/CD jobs
+- **URL**: http://localhost:8080
+- **User**: siddharth
+- **Usage**: General Jenkins job management and monitoring
+- **Jobs**: Locust - Test Runner, Locust Code n Data Copy
+
+#### jenkins-locust
+**Purpose**: Remote Jenkins server for Locust EC2 machine provisioning
+- **URL**: http://jenkins.vrgo.dev.xp.irdeto.com/
+- **User**: anup-patel
+- **Usage**: Managing EC2 instances for Locust load testing servers
+- **Function**: Provisions and configures Locust master/worker nodes on AWS EC2
+- **Jobs**: load-test-locust-asg, load-test-infra-start-stop-job
+
+**Specifying Jenkins Instance:**
+
+Use the `--jenkins=<instance>` flag to specify which Jenkins instance to use:
+
+```bash
+# Default (jenkins-local)
+node jenkins-client.js list
+
+# Explicitly specify jenkins-local
+node jenkins-client.js --jenkins=jenkins-local list
+
+# Use jenkins-locust for EC2 provisioning
+node jenkins-client.js --jenkins=jenkins-locust list
+node jenkins-client.js --jenkins=jenkins-locust build load-test-locust-asg MIN_SIZE=31 MAX_SIZE=31 DESIRED_CAPACITY=31
+
+# Get build status from jenkins-locust
+node jenkins-client.js --jenkins=jenkins-locust status load-test-locust-asg 156
+```
+
+**Configuration:**
+Each Jenkins instance is configured in `config.json` under `mcpServers.jenkins-local` and `mcpServers.jenkins-locust` with:
+- `baseUrl`: Jenkins server URL
+- `username`: Jenkins username
+- `apiToken`: Jenkins API token (generate from User > Configure > API Token)
+
+---
+
+### Locust Load Testing Jobs
 
 ### Job: "Locust - Test Runner"
+**Jenkins Instance**: jenkins-local (http://localhost:8080)
 **URL**: http://localhost:8080/job/Locust%20-%20Test%20Runner/  
 **Status**: Last Build #420 (FAILURE)  
 
@@ -612,6 +683,7 @@ Next Steps: Proceed to 10K user test."
 - Runs load/performance tests using Locust framework
 - Generates HTML reports (result.html) in the Reports folder
 - Executes test scenarios against target APIs/services
+- Requires Locust master/worker infrastructure to be provisioned first
 
 **Parameters**:
 - `Master_IP` (default: "10.16.7.202") - IP address of Locust master node
@@ -621,14 +693,21 @@ Next Steps: Proceed to 10K user test."
 
 **Usage**:
 ```bash
+# Using jenkins-local configuration (default)
 node jenkins-client.js build "Locust - Test Runner" Master_IP=10.16.7.202 Users=10 RampUp=0.66 Duration=3m
 # Note: RampUp is the user ramp rate (users/second) - use system-specific calculation
+
+# Explicitly specify jenkins-local
+node jenkins-client.js --jenkins=jenkins-local build "Locust - Test Runner" Master_IP=10.16.7.202 Users=1000 RampUp=16.67 Duration=3m
+
+# Check build status
 node jenkins-client.js status "Locust - Test Runner" <BUILD_NUMBER>
 ```
 
 ---
 
 ### Job: "Locust Code n Data Copy"
+**Jenkins Instance**: jenkins-local (http://localhost:8080)
 **URL**: http://localhost:8080/job/Locust%20Code%20n%20Data%20Copy/  
 **Status**: Not built yet  
 
@@ -643,8 +722,94 @@ node jenkins-client.js status "Locust - Test Runner" <BUILD_NUMBER>
 
 **Usage**:
 ```bash
+# Using jenkins-local configuration (default)
 node jenkins-client.js build "Locust Code n Data Copy" Master_IP=10.16.7.202
+
+# Explicitly specify jenkins-local
+node jenkins-client.js --jenkins=jenkins-local build "Locust Code n Data Copy" Master_IP=10.16.7.202
+
+# Check build status
 node jenkins-client.js status "Locust Code n Data Copy" <BUILD_NUMBER>
+```
+
+---
+
+### EC2 Machine Provisioning Jobs (jenkins-locust)
+
+**Jenkins Instance**: jenkins-locust (http://jenkins.vrgo.dev.xp.irdeto.com/)
+
+**Purpose**: Provision and manage AWS EC2 instances for Locust load testing infrastructure
+
+### Job: "load-test-locust-asg"
+**Jenkins Instance**: jenkins-locust
+**Purpose**: Provision AWS Auto Scaling Group for Locust load testing
+
+**Description**:
+- Creates/updates AWS Auto Scaling Group for Locust infrastructure
+- Provisions EC2 instances for Locust master and workers
+- Configures instance count based on MIN_SIZE, MAX_SIZE, DESIRED_CAPACITY
+- Outputs master IP and worker IPs for test execution
+
+**Parameters**:
+- `MIN_SIZE` (default: 31) - Minimum number of EC2 instances
+- `MAX_SIZE` (default: 31) - Maximum number of EC2 instances
+- `DESIRED_CAPACITY` (default: 31) - Desired number of EC2 instances
+- `ASG_NAME` - Auto Scaling Group name
+
+**Usage**:
+```bash
+# List jobs on jenkins-locust
+node jenkins-client.js --jenkins=jenkins-locust list
+
+# Provision 31 EC2 servers (1 master + 30 workers)
+node jenkins-client.js --jenkins=jenkins-locust build load-test-locust-asg \
+  MIN_SIZE=31 MAX_SIZE=31 DESIRED_CAPACITY=31
+
+# Check provisioning status
+node jenkins-client.js --jenkins=jenkins-locust status load-test-locust-asg <BUILD_NUMBER>
+
+# Get console output to see server IPs
+node jenkins-client.js --jenkins=jenkins-locust console load-test-locust-asg <BUILD_NUMBER>
+```
+
+**Output**:
+- Master IP: Single master node IP (e.g., 10.16.7.202)
+- Worker IPs: List of worker node IPs (saved to slavesIPs.txt)
+- Total Servers: 31 (1 master + 30 workers)
+
+**Common Workflow**:
+1. Use jenkins-locust to provision EC2 instances (Locust master + workers)
+```bash
+node jenkins-client.js --jenkins=jenkins-locust build load-test-locust-asg MIN_SIZE=31 MAX_SIZE=31 DESIRED_CAPACITY=31
+```
+
+2. Get the Master IP from provisioning output and save to masterIP.txt
+```bash
+echo "10.16.7.202" > masterIP.txt
+```
+
+3. Save worker IPs to slavesIPs.txt (one IP per line)
+```bash
+# Example:
+10.16.2.214
+10.16.2.149
+...
+```
+
+4. Copy Locust code and data to servers
+```bash
+node jenkins-client.js --jenkins=jenkins-local build "Locust Code n Data Copy" Master_IP=10.16.7.202
+```
+
+5. Run load test
+```bash
+node jenkins-client.js --jenkins=jenkins-local build "Locust - Test Runner" \
+  Master_IP=10.16.7.202 Users=1000 RampUp=16.67 Duration=3m
+```
+
+6. After testing, terminate EC2 instances (use appropriate jenkins-locust job)
+```bash
+node jenkins-client.js --jenkins=jenkins-locust build load-test-infra-start-stop-job ACTION=stop
 ```
 
 ---
@@ -1803,6 +1968,419 @@ START: Analyze test results
 4. **Calculate ratios** - Memory per request, CPU per transaction
 5. **Compare iterations** - How do metrics change with load increase?
 6. **Document clearly** - Future tests will reference this analysis
+
+---
+
+## 7. Tools Inventory and Quick Reference
+
+### Core Testing Tools
+
+#### 1. **jenkins-client.js** - Jenkins Automation
+**Multi-instance support**: Use `--jenkins=<instance>` flag
+
+**Instances**:
+- `jenkins-local` (default): Test execution and general CI/CD
+- `jenkins-locust`: EC2 infrastructure provisioning
+
+**Commands**:
+```bash
+# List jobs
+node jenkins-client.js --jenkins=jenkins-local list
+
+# Build with parameters
+node jenkins-client.js --jenkins=jenkins-local build "Locust - Test Runner" Master_IP=10.16.7.202 Users=1000
+
+# Provision EC2 infrastructure
+node jenkins-client.js --jenkins=jenkins-locust build load-test-locust-asg MIN_SIZE=31 MAX_SIZE=31 DESIRED_CAPACITY=31
+
+# Check status
+node jenkins-client.js status <job-name> <build-number>
+```
+
+---
+
+#### 2. **inspect-data-enhanced.js** - Test Report Analysis (ENHANCED)
+**Purpose**: Extract comprehensive metadata from Locust HTML reports
+
+**Commands**:
+```bash
+# Human-readable output
+node inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" text
+
+# Machine-readable JSON
+node inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" json
+```
+
+**Outputs**:
+- ✅ Exact timestamps (ISO + Epoch): startTime, endTime, bufferEndTime
+- ✅ Failure status codes breakdown (504, 401, 404, 502, 400)
+- ✅ Top 5 slowest endpoints (sorted by avg_response_time)
+- ✅ Top 5 highest error rate (sorted by failure_rate)
+- ✅ Duration with 60s stabilization buffer
+
+---
+
+#### 3. **get-pod-metrics-enhanced.js** - Kubernetes Metrics (ENHANCED)
+**Purpose**: Collect infrastructure metrics with AVG and MAX values
+
+**Commands**:
+```bash
+# Using exact timestamps (recommended)
+node get-pod-metrics-enhanced.js subscriber-event-service 1776753979 1776754339
+
+# Using duration in minutes (legacy)
+node get-pod-metrics-enhanced.js subscriber-event-service 5
+```
+
+**Outputs**:
+- ✅ AVG and MAX CPU utilization (solves discrepancy issues)
+- ✅ AVG and MAX Memory utilization
+- ✅ Per-pod breakdown with both values
+- ✅ Pod count, restarts, network I/O
+- ✅ Resource utilization as % of limits
+
+---
+
+#### 4. **get-apm-metrics-enhanced.js** - APM Metrics (ENHANCED)
+**Purpose**: Collect New Relic APM metrics with transaction-level analysis
+
+**Commands**:
+```bash
+# Using exact timestamps with top-N (recommended)
+node get-apm-metrics-enhanced.js subscriber-event 1776753979 1776754339 5
+
+# Using duration in minutes
+node get-apm-metrics-enhanced.js subscriber-event 5 10
+```
+
+**Outputs**:
+- ✅ Top N slowest transactions (sorted by avg_duration)
+- ✅ Top N highest error rate (sorted by error_rate)
+- ✅ Response times, throughput, error rates
+- ✅ HTTP status breakdown
+- ✅ Host-level metrics for all pods
+
+---
+
+#### 5. **upload-with-Locust_Template.js** - Google Sheets Upload (RECOMMENDED)
+**Purpose**: Upload test results to Google Sheets with advanced formatting
+
+**Commands**:
+```bash
+# With all options
+node upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "<spreadsheet-id>" \
+  --users 40000 \
+  --rampup "4 minutes" \
+  --targettps 667 \
+  --timezone "local" \
+  --comment "Test analysis and findings..."
+
+# Minimal usage
+node upload-with-Locust_Template.js result.html "<spreadsheet-id>" --users 1000 --rampup "1 minute"
+```
+
+**Features**:
+- ✅ Merged comment cell (B-K columns)
+- ✅ Fixed Name column width (400px)
+- ✅ Right-aligned numbers
+- ✅ Auto SLA check (1-second threshold)
+- ✅ Auto PASS/FAIL detection
+- ✅ Timezone support (IST/local)
+
+---
+
+#### 6. **send-email-report.js** - Email Reports
+**Purpose**: Send load test reports via email with professional HTML formatting
+
+**Commands**:
+```bash
+# With detailed analysis
+node send-email-report.js \
+  --to "team@example.com" \
+  --cc "manager@example.com" \
+  --subject "Load Test Results - 5000 Users" \
+  --report "D:\PerformanceAI\Reports\result.html" \
+  --body "Test completed successfully...
+
+Key Findings:
+- Response Time: 450ms avg
+- Throughput: 83 RPS
+- Status: PASS"
+
+# Basic usage
+node send-email-report.js --to "team@example.com" --subject "Test Results" --report "result.html"
+```
+
+**Features**:
+- ✅ Auto-extracts metrics from HTML report
+- ✅ Professional HTML templates
+- ✅ Multiple recipients and CC support
+- ✅ Gmail, Outlook, custom SMTP support
+- ✅ SLA-based PASS/FAIL status
+
+---
+
+### Diagnostic & Analysis Tools
+
+#### 7. **debug-html.js** - HTML Report Debugger
+**Purpose**: Diagnostic tool for debugging Locust HTML report extraction
+
+**Commands**:
+```bash
+# Analyze Reports/result.html and extract JSON
+node debug-html.js
+```
+
+**Outputs**:
+- Extracts window.templateArgs JSON
+- Saves to extracted-data.json
+- Shows test summary (requests, failures, endpoints)
+- Useful for debugging email report issues
+
+---
+
+#### 8. **list-services.js** - Service Discovery
+**Purpose**: List all monitored services across platforms
+
+**Commands**:
+```bash
+# List all services from New Relic and Kubernetes
+node list-services.js
+```
+
+**Outputs**:
+- New Relic APM applications (reporting/not reporting)
+- Kubernetes services from Prometheus
+- Service count and availability status
+- Grouped by reporting status
+
+**Example Output**:
+```
+=== NEW RELIC APM SERVICES ===
+📊 Total Applications: 45
+✅ Reporting (32):
+   - subscriber-event-service
+   - api-gateway
+   ...
+⚫ Not Reporting (13):
+   - old-service
+   ...
+
+=== KUBERNETES SERVICES (Prometheus) ===
+📦 Total Services: 28
+   - subscriber-event-service
+   - learn-action-service
+   ...
+```
+
+---
+
+#### 9. **read-gsheet.js** - Google Sheets Reader
+**Purpose**: Read data from Google Sheets for verification
+
+**Commands**:
+```bash
+# Read all data from first sheet (JSON format)
+node read-gsheet.js "<spreadsheet-id>"
+
+# Read specific sheet
+node read-gsheet.js "<spreadsheet-id>" --sheet "Load Test Results"
+
+# Read specific range
+node read-gsheet.js "<spreadsheet-id>" --sheet "Results" --range "A1:K50"
+
+# Output as CSV
+node read-gsheet.js "<spreadsheet-id>" --format csv
+```
+
+---
+
+### Legacy & Alternative Tools
+
+#### 10. **upload-results-clean.js** - Simplified Upload
+**Purpose**: Basic Google Sheets upload without advanced formatting
+
+**Commands**:
+```bash
+# Simple upload (positional arguments only)
+node upload-results-clean.js "D:\PerformanceAI\Reports\result.html" "<spreadsheet-id>"
+```
+
+**Use Case**: Quick exports without formatting needs
+
+---
+
+#### 11. **upload-with-template.js** - Legacy Template
+**Purpose**: Original 3-column format upload
+
+**Commands**:
+```bash
+node upload-with-template.js result.html "<spreadsheet-id>" \
+  --users 50000 \
+  --rampup "1 minute" \
+  --comment "Load test analysis"
+```
+
+**Use Case**: Original format compatibility
+
+---
+
+#### 12. **locust-to-gsheet.js** - Original Script
+**Purpose**: Original Locust results uploader
+
+**Commands**:
+```bash
+node locust-to-gsheet.js result.html "<spreadsheet-id>" \
+  --users 50000 \
+  --tps 833 \
+  --rampup "1 minute"
+```
+
+**Use Case**: Backward compatibility
+
+---
+
+#### 13. **get-pod-metrics.js** - Legacy Pod Metrics
+**Purpose**: Original Kubernetes metrics tool (shows current values only)
+
+**Commands**:
+```bash
+node get-pod-metrics.js subscriber-event-service 5
+```
+
+**Limitation**: Shows current/average only, not MAX values
+**Recommendation**: Use `get-pod-metrics-enhanced.js` instead
+
+---
+
+#### 14. **get-apm-metrics.js** - Legacy APM Metrics
+**Purpose**: Original New Relic metrics tool (no transaction sorting)
+
+**Commands**:
+```bash
+node get-apm-metrics.js subscriber-event 5
+```
+
+**Limitation**: No top-N sorting, no exact timestamps
+**Recommendation**: Use `get-apm-metrics-enhanced.js` instead
+
+---
+
+#### 15. **inspect-data.js** - Legacy Report Analysis
+**Purpose**: Original test report parser
+
+**Commands**:
+```bash
+node inspect-data.js "D:\PerformanceAI\Reports\result.html"
+```
+
+**Limitation**: No exact timestamps, no status code breakdown
+**Recommendation**: Use `inspect-data-enhanced.js` instead
+
+---
+
+### Core Libraries
+
+#### 16. **grafana-reader.js** - Grafana API Client
+**Purpose**: Grafana and Prometheus query operations
+
+**Commands**:
+```bash
+# Health check
+node grafana-reader.js health
+
+# List dashboards
+node grafana-reader.js dashboards
+
+# Prometheus queries
+node grafana-reader.js query "up"
+node grafana-reader.js label-values namespace
+```
+
+---
+
+#### 17. **newrelic-client.js** - New Relic API Client
+**Purpose**: New Relic NerdGraph and REST API operations
+
+**Commands**:
+```bash
+# Account details
+node newrelic-client.js account
+
+# List APM applications
+node newrelic-client.js apps
+
+# NRQL queries
+node newrelic-client.js nrql "SELECT count(*) FROM Transaction SINCE 1 hour ago"
+
+# Search entities
+node newrelic-client.js search "name LIKE '%prod%'"
+```
+
+---
+
+### Configuration Files
+
+#### 18. **config.json** - Main Configuration
+**Contains**:
+- Grafana URL and credentials
+- New Relic API keys and account ID
+- Jenkins instances (jenkins-local, jenkins-locust)
+- Email SMTP settings
+
+**Security**: Excluded from git via .gitignore
+
+---
+
+#### 19. **credentials.json** - Google Sheets Credentials
+**Contains**:
+- Google service account credentials for Sheets API
+- Used by all upload scripts
+
+**Setup**: Download from Google Cloud Console
+**Security**: Excluded from git via .gitignore
+
+---
+
+### Data Files
+
+#### 20. **masterIP.txt** - Locust Master IP
+**Contains**: Single IP address of Locust master node
+**Example**: `10.16.7.202`
+**Usage**: Used by Jenkins jobs for test execution
+
+---
+
+#### 21. **slavesIPs.txt** - Locust Workers IPs
+**Contains**: List of worker node IPs (one per line)
+**Example**:
+```
+10.16.2.214
+10.16.2.149
+...
+```
+**Usage**: Used by Jenkins jobs for distributed load testing
+
+---
+
+### Quick Reference: Tool Selection Guide
+
+**For Load Testing Workflow:**
+1. Provision EC2: `jenkins-client.js --jenkins=jenkins-locust build load-test-locust-asg`
+2. Copy code: `jenkins-client.js build "Locust Code n Data Copy"`
+3. Run test: `jenkins-client.js build "Locust - Test Runner"`
+4. Extract metadata: `inspect-data-enhanced.js` ⭐ (ENHANCED)
+5. Get pod metrics: `get-pod-metrics-enhanced.js` ⭐ (ENHANCED)
+6. Get APM metrics: `get-apm-metrics-enhanced.js` ⭐ (ENHANCED)
+7. Upload to sheet: `upload-with-Locust_Template.js` ⭐ (RECOMMENDED)
+8. Send email: `send-email-report.js`
+
+**For Debugging:**
+- Debug HTML extraction: `debug-html.js`
+- List services: `list-services.js`
+- Read sheets data: `read-gsheet.js`
+
+**⭐ = Enhanced/Recommended versions with additional features**
 
 ---
 

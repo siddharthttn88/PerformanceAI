@@ -9,9 +9,16 @@ const { join } = require('path');
 const configPath = join(__dirname, 'config.json');
 const config = JSON.parse(readFileSync(configPath, 'utf8'));
 
-const JENKINS_URL = config.mcpServers?.jenkins?.baseUrl || process.env.JENKINS_URL || 'http://localhost:8080';
-const JENKINS_USER = config.mcpServers?.jenkins?.username || process.env.JENKINS_USER;
-const JENKINS_TOKEN = config.mcpServers?.jenkins?.apiToken || process.env.JENKINS_TOKEN;
+// Parse Jenkins instance from command line args (--jenkins=jenkins-local or --jenkins=jenkins-locust)
+const jenkinsInstanceArg = process.argv.find(arg => arg.startsWith('--jenkins='));
+const jenkinsInstance = jenkinsInstanceArg ? jenkinsInstanceArg.split('=')[1] : 'jenkins-local';
+
+// Get Jenkins configuration for the specified instance
+const jenkinsConfig = config.mcpServers?.[jenkinsInstance] || config.mcpServers?.jenkins || {};
+
+const JENKINS_URL = jenkinsConfig.baseUrl || process.env.JENKINS_URL || 'http://localhost:8080';
+const JENKINS_USER = jenkinsConfig.username || process.env.JENKINS_USER;
+const JENKINS_TOKEN = jenkinsConfig.apiToken || process.env.JENKINS_TOKEN;
 
 /**
  * Make an HTTP request to Jenkins API
@@ -483,8 +490,17 @@ async function waitForBuildComplete(jobName, buildNumber, maxWaitSeconds = 600) 
 
 // CLI Interface
 async function main() {
-  const args = process.argv.slice(2);
+  // Filter out --jenkins flag from args
+  const args = process.argv.slice(2).filter(arg => !arg.startsWith('--jenkins='));
   const command = args[0];
+
+  // Log which Jenkins instance we're using
+  const jenkinsInstanceArg = process.argv.find(arg => arg.startsWith('--jenkins='));
+  const jenkinsInstance = jenkinsInstanceArg ? jenkinsInstanceArg.split('=')[1] : 'jenkins-local';
+  
+  if (command) {
+    console.log(`Using Jenkins instance: ${jenkinsInstance} (${JENKINS_URL})\n`);
+  }
 
   try {
     switch (command) {
@@ -694,23 +710,30 @@ async function main() {
         console.log('Jenkins Client');
         console.log('');
         console.log('Usage:');
-        console.log('  node jenkins-client.js list                                    - List all jobs');
-        console.log('  node jenkins-client.js info <job-name>                         - Get job details');
-        console.log('  node jenkins-client.js config <job-name>                       - Get job configuration XML');
-        console.log('  node jenkins-client.js update-config <job-name> <file.xml>     - Update job configuration (⚠️  WRITE)');
-        console.log('  node jenkins-client.js build <job-name> [key=value ...]        - Trigger a build');
-        console.log('  node jenkins-client.js status <job-name> [build-number]        - Get build status');
-        console.log('  node jenkins-client.js console <job-name> [build-number]       - Get console output');
-        console.log('  node jenkins-client.js stop <job-name> <build-number>          - Stop/abort a running build');
-        console.log('  node jenkins-client.js wait <job-name> <build-number>          - Wait for build to complete');
-        console.log('  node jenkins-client.js build-wait <job-name> [key=value ...]   - Trigger and wait for completion');
+        console.log('  node jenkins-client.js [--jenkins=<instance>] <command> [args]');
+        console.log('');
+        console.log('Options:');
+        console.log('  --jenkins=<instance>  Jenkins instance to use (jenkins-local or jenkins-locust, default: jenkins-local)');
+        console.log('');
+        console.log('Commands:');
+        console.log('  list                                    - List all jobs');
+        console.log('  info <job-name>                         - Get job details');
+        console.log('  config <job-name>                       - Get job configuration XML');
+        console.log('  update-config <job-name> <file.xml>     - Update job configuration (⚠️  WRITE)');
+        console.log('  build <job-name> [key=value ...]        - Trigger a build');
+        console.log('  status <job-name> [build-number]        - Get build status');
+        console.log('  console <job-name> [build-number]       - Get console output');
+        console.log('  stop <job-name> <build-number>          - Stop/abort a running build');
+        console.log('  wait <job-name> <build-number>          - Wait for build to complete');
+        console.log('  build-wait <job-name> [key=value ...]   - Trigger and wait for completion');
         console.log('');
         console.log('Examples:');
         console.log('  node jenkins-client.js list');
+        console.log('  node jenkins-client.js --jenkins=jenkins-locust list');
         console.log('  node jenkins-client.js config my-job > config.xml');
         console.log('  node jenkins-client.js update-config my-job config.xml');
         console.log('  node jenkins-client.js build my-job');
-        console.log('  node jenkins-client.js build my-job BRANCH=main ENV=prod');
+        console.log('  node jenkins-client.js --jenkins=jenkins-local build my-job BRANCH=main ENV=prod');
         console.log('  node jenkins-client.js status my-job 42');
         console.log('  node jenkins-client.js stop my-job 42');
         console.log('  node jenkins-client.js build-wait my-job BRANCH=dev');
