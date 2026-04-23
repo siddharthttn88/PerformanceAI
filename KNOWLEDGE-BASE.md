@@ -317,6 +317,290 @@ node read-gsheet.js 1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw --creds my-cred
 
 ---
 
+## 2a. Send Load Test Report via Email
+
+### Overview
+Send load test reports and analysis via email with HTML formatting and attachments. Supports automatic test summary extraction and customizable email templates.
+
+### Command
+```bash
+node send-email-report.js --to "<EMAIL>" --subject "<SUBJECT>" --report "<PATH_TO_RESULT_HTML>" [options]
+```
+
+### Options
+- `--to <email>` - Recipient email (required, comma-separated for multiple)
+- `--cc <email>` - CC recipients (optional, comma-separated)
+- `--subject <text>` - Email subject line (required)
+- `--report <path>` - Path to HTML report file (required)
+- `--body <text>` - Additional body text/analysis (optional)
+- `--attach <paths>` - Additional attachments (optional, comma-separated paths)
+- `--config <path>` - Config file path (default: config.json)
+- `--template <style>` - Email template: basic|detailed (default: detailed)
+
+### Email Templates
+
+**Basic Template:**
+- Simple layout with status badge
+- Custom analysis section
+- Single attachment (HTML report)
+- Clean and minimal design
+
+**Detailed Template (Recommended):**
+- Professional gradient header
+- Auto-extracted metrics summary
+  - Total Requests
+  - Total Failures & Failure Rate
+  - Average Response Time
+- Visual status badges (✅ PASS / 🔴 FAIL)
+- Color-coded metrics (green for pass, red for fail)
+- Custom analysis section with formatting
+- Multiple attachments support
+- Professional footer with branding
+
+### Examples
+
+#### Basic Email with Report
+```bash
+node send-email-report.js \
+  --to "team@example.com" \
+  --subject "Load Test Results - 5000 Users" \
+  --report "D:\PerformanceAI\Reports\result.html"
+```
+
+#### Email with CC and Analysis
+```bash
+node send-email-report.js \
+  --to "manager@example.com" \
+  --cc "dev@example.com,qa@example.com" \
+  --subject "Breaking Point Test - subscriber-event-service" \
+  --report "D:\PerformanceAI\Reports\result.html" \
+  --body "Breaking Point Analysis - 40K Users
+
+Test Results: FAIL
+Breaking Point Reached: 40,000 users
+
+Key Findings:
+- Error Rate: 11.38% (Threshold: 5%) 🔴
+- Avg Response Time: 2,733ms (Threshold: 1,000ms) 🔴
+- CPU Utilization: 100% max (pods maxed out)
+- Memory Utilization: 68% max
+
+Primary Bottleneck: CPU Bound
+- All pods reached 100% CPU during peak load
+- Response times degraded significantly
+- High rate of 504 Gateway Timeout errors (99.87%)
+
+Top 3 Slowest Endpoints:
+1. Remove_Favourite: 12,868ms avg (43.70% error)
+2. Get_Favourite_List: 7,289ms avg (67.22% error)
+3. Add_To_Favourite: 2,839ms avg (12.35% error)
+
+Recommendations:
+- Maximum safe load: 30,000 users
+- Increase pod count from 10 to 15
+- Optimize database queries for favourite operations
+- Add caching layer for frequently accessed data
+
+Next Steps:
+- Scale infrastructure to 15 pods
+- Run validation test with optimizations
+- Target: 50,000 users stable"
+```
+
+#### Email with Multiple Attachments
+```bash
+node send-email-report.js \
+  --to "team@example.com" \
+  --subject "Load Test - Complete Results Package" \
+  --report "D:\PerformanceAI\Reports\result.html" \
+  --attach "D:\PerformanceAI\Reports\metrics.json,D:\PerformanceAI\Reports\grafana-dashboard.png" \
+  --body "Complete load test results package attached.
+
+Included files:
+- result.html: Full Locust report with all metrics
+- metrics.json: Raw metrics data for analysis
+- grafana-dashboard.png: Infrastructure metrics screenshot
+
+Test passed all SLA criteria. Ready for production."
+```
+
+#### Basic Template Email
+```bash
+node send-email-report.js \
+  --to "stakeholder@example.com" \
+  --subject "Quick Test Results - API Gateway" \
+  --report "D:\PerformanceAI\Reports\result.html" \
+  --template basic \
+  --body "Quick smoke test completed successfully. All endpoints within SLA."
+```
+
+### Email Configuration
+
+**Setup (One-time):**
+
+1. Install nodemailer package:
+```bash
+npm install nodemailer
+```
+
+2. Add email configuration to `config.json`:
+```json
+{
+  "email": {
+    "service": "gmail",
+    "host": "smtp.gmail.com",
+    "port": 587,
+    "secure": false,
+    "auth": {
+      "user": "your-email@gmail.com",
+      "pass": "your-app-password"
+    },
+    "from": "Load Test Reports <your-email@gmail.com>"
+  }
+}
+```
+
+3. For Gmail - Generate App Password:
+   - Go to https://myaccount.google.com/apppasswords
+   - Select "Mail" and device "Other"
+   - Copy the 16-character password
+   - Use this in config.json (not your regular Gmail password)
+
+4. For Other Email Services:
+   - **Outlook/Office365:**
+     ```json
+     "service": "outlook",
+     "host": "smtp-mail.outlook.com",
+     "port": 587
+     ```
+   - **Custom SMTP:**
+     ```json
+     "host": "smtp.yourcompany.com",
+     "port": 587,
+     "secure": false
+     ```
+
+### Auto-Extracted Metrics
+
+The script automatically extracts and displays:
+- Total Requests
+- Total Failures
+- Failure Rate (%)
+- Average Response Time
+- Test Status (PASS/FAIL based on SLA)
+
+**SLA Criteria (Auto-determined):**
+- FAIL if average response time > 1000ms
+- FAIL if failure rate > 5%
+- PASS if both criteria met
+
+### Email Features
+
+✅ **Professional HTML Templates**
+- Responsive design
+- Color-coded status indicators
+- Visual metric cards
+- Formatted analysis sections
+
+✅ **Automatic Test Summary**
+- Extracts key metrics from HTML report
+- Calculates failure rates
+- Determines PASS/FAIL status
+
+✅ **Multiple Recipients**
+- Send to multiple recipients (comma-separated)
+- CC support for stakeholders
+- Configurable sender address
+
+✅ **Flexible Attachments**
+- HTML reports
+- Screenshots
+- Metrics files (JSON, CSV)
+- Grafana/New Relic exports
+
+✅ **Custom Analysis**
+- Add detailed findings
+- Include recommendations
+- Format with line breaks
+- Rich text formatting in HTML
+
+### Integration with Workflow
+
+**Add to Complete Load Testing Workflow (Section 4):**
+
+After **Step 5: Upload to Google Sheet**, add:
+
+**Step 6: Send Email Report**
+```bash
+node send-email-report.js \
+  --to "performance-team@example.com" \
+  --cc "dev-managers@example.com" \
+  --subject "Load Test Results - <SERVICE_NAME> - <USER_COUNT> Users" \
+  --report "D:\PerformanceAI\Reports\result.html" \
+  --body "<PREPARED_COMMENT_FROM_STEP_4>"
+```
+
+**Example Integrated Workflow:**
+```bash
+# Step 5: Upload to Google Sheet
+node upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" \
+  "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" \
+  --users 5000 --rampup "1 minute" --targettps 83 \
+  --comment "Test completed successfully..."
+
+# Step 6: Send Email Report
+node send-email-report.js \
+  --to "team@example.com" \
+  --cc "manager@example.com" \
+  --subject "Load Test Results - subscriber-event-service - 5000 Users" \
+  --report "D:\PerformanceAI\Reports\result.html" \
+  --body "Subscriber Event Service Load Test - 5000 Users
+
+Test Results: ✅ PASS
+
+Infrastructure (Kubernetes):
+- Pods: 20 (all running, no restarts)
+- CPU: 35% avg, 42% max
+- Memory: 60% avg, 68% max
+
+APM Metrics (New Relic):
+- Response Time: 450ms avg (P95: 670ms)
+- Throughput: 25,000 rpm
+- Error Rate: 0.16%
+
+Status: All endpoints within SLA. System stable.
+Next Steps: Proceed to 10K user test."
+```
+
+### Notes
+- Email configuration must be added to `config.json` before first use
+- For Gmail, use App Password (not regular password)
+- SMTP credentials are stored securely in config.json (excluded from git)
+- Failed authentication shows helpful error messages
+- Supports both Gmail, Outlook, and custom SMTP servers
+- Attachments are automatically linked to email
+- HTML template ensures professional presentation
+- Email sent confirmation includes message ID
+
+### Troubleshooting
+
+**Authentication Failed:**
+- Check if using App Password (Gmail)
+- Verify email and password in config.json
+- Enable "Less secure apps" if using older auth
+
+**Email Not Received:**
+- Check spam/junk folder
+- Verify recipient email address
+- Check SMTP server settings (host, port)
+
+**Attachment Too Large:**
+- Most email servers limit: 25MB (Gmail), 20MB (Outlook)
+- Compress large HTML reports
+- Use Google Drive links for very large files
+
+---
+
 ## 3. Jenkins Jobs - Locust Load Testing
 
 ### Job: "Locust - Test Runner"

@@ -121,6 +121,17 @@ The script reads configuration from `config.json`:
       "baseUrl": "http://your-jenkins-server:8080",
       "username": "your-username",
       "apiToken": "your-api-token"
+    },
+    "email": {
+      "service": "gmail",
+      "host": "smtp.gmail.com",
+      "port": 587,
+      "secure": false,
+      "auth": {
+        "user": "your-email@gmail.com",
+        "pass": "your-app-password"
+      },
+      "from": "Load Test Reports <your-email@gmail.com>"
     }
   }
 }
@@ -135,6 +146,15 @@ The script reads configuration from `config.json`:
 - `JENKINS_BASE_URL`: Your Jenkins instance URL
 - `JENKINS_USERNAME`: Your Jenkins username
 - `JENKINS_API_TOKEN`: Your Jenkins API token (generate from User > Configure > API Token)
+- **Email Settings:**
+  - `service`: Email service provider (gmail, outlook, etc.)
+  - `host`: SMTP server hostname
+  - `port`: SMTP port (587 for TLS, 465 for SSL)
+  - `secure`: Use SSL (true) or TLS (false)
+  - `auth.user`: Your email address
+  - `auth.pass`: Your email password or app-specific password
+  - `from`: Sender name and email address
+  - For Gmail: Use App Password from https://myaccount.google.com/apppasswords
 
 ## Usage
 
@@ -477,6 +497,162 @@ POST | Add_To_ContinueWatch          | 216115     | 32      | 45.50        | 20 
 POST | Add_to_Favourite              | 19057      | 2354    | 2839.64      | 22       | 10143    | 45.35  | 5.60       | 190         | 10000
 ...
 ```
+
+#### Send Load Test Reports via Email
+
+Send load test reports and analysis via email with professional HTML formatting and automatic test summary extraction.
+
+```bash
+# Install nodemailer package first (one-time)
+npm install nodemailer
+
+# Basic usage
+node send-email-report.js \
+  --to "team@example.com" \
+  --subject "Load Test Results - 5000 Users" \
+  --report "D:\PerformanceAI\Reports\result.html"
+
+# With CC and detailed analysis
+node send-email-report.js \
+  --to "manager@example.com" \
+  --cc "dev@example.com,qa@example.com" \
+  --subject "Breaking Point Test - subscriber-event-service" \
+  --report "D:\PerformanceAI\Reports\result.html" \
+  --body "Breaking Point Analysis - 40K Users
+
+Test Results: FAIL
+Breaking Point Reached: 40,000 users
+
+Key Findings:
+- Error Rate: 11.38% (Threshold: 5%) 🔴
+- Avg Response Time: 2,733ms (Threshold: 1,000ms) 🔴
+- CPU Utilization: 100% max (pods maxed out)
+
+Primary Bottleneck: CPU Bound
+Recommendations:
+- Maximum safe load: 30,000 users
+- Increase pod count from 10 to 15
+- Optimize database queries"
+
+# With multiple attachments
+node send-email-report.js \
+  --to "team@example.com" \
+  --subject "Load Test - Complete Results Package" \
+  --report "D:\PerformanceAI\Reports\result.html" \
+  --attach "metrics.json,grafana-dashboard.png"
+
+# Using basic template (minimal)
+node send-email-report.js \
+  --to "stakeholder@example.com" \
+  --subject "Quick Test Results" \
+  --report "result.html" \
+  --template basic
+```
+
+**Command Line Options:**
+- `--to <email>` - Recipient email (required, comma-separated for multiple)
+- `--cc <email>` - CC recipients (optional, comma-separated)
+- `--subject <text>` - Email subject line (required)
+- `--report <path>` - Path to HTML report file (required)
+- `--body <text>` - Additional body text/analysis (optional)
+- `--attach <paths>` - Additional attachments (optional, comma-separated)
+- `--config <path>` - Config file path (default: config.json)
+- `--template <style>` - Email template: basic|detailed (default: detailed)
+
+**Email Templates:**
+
+**Detailed Template (Default):**
+- Professional gradient header design
+- Auto-extracted metrics summary with visual cards
+  - Total Requests
+  - Total Failures & Failure Rate
+  - Average Response Time
+- Color-coded status badges (✅ PASS / 🔴 FAIL)
+- Formatted analysis section with proper spacing
+- Multiple attachments support
+- Professional footer with branding
+
+**Basic Template:**
+- Simple clean layout
+- Status badge
+- Custom analysis section
+- Minimal styling for quick updates
+
+**Auto-Extracted Metrics:**
+- Total Requests
+- Total Failures
+- Failure Rate (%)
+- Average Response Time
+- Test Status (PASS/FAIL based on SLA criteria)
+
+**Email Configuration (One-time Setup):**
+
+Add email configuration to `config.json`:
+
+```json
+{
+  "email": {
+    "service": "gmail",
+    "host": "smtp.gmail.com",
+    "port": 587,
+    "secure": false,
+    "auth": {
+      "user": "your-email@gmail.com",
+      "pass": "your-app-password"
+    },
+    "from": "Load Test Reports <your-email@gmail.com>"
+  }
+}
+```
+
+**For Gmail - Generate App Password:**
+1. Go to https://myaccount.google.com/apppasswords
+2. Select "Mail" and device "Other"
+3. Copy the 16-character password
+4. Use this in config.json (not your regular Gmail password)
+
+**For Other Email Services:**
+
+Outlook/Office365:
+```json
+"email": {
+  "service": "outlook",
+  "host": "smtp-mail.outlook.com",
+  "port": 587,
+  "secure": false,
+  "auth": {
+    "user": "your-email@outlook.com",
+    "pass": "your-password"
+  }
+}
+```
+
+Custom SMTP:
+```json
+"email": {
+  "host": "smtp.yourcompany.com",
+  "port": 587,
+  "secure": false,
+  "auth": {
+    "user": "smtp-username",
+    "pass": "smtp-password"
+  }
+}
+```
+
+**Features:**
+- ✅ **Professional HTML Templates** - Responsive design with visual hierarchy
+- ✅ **Automatic Test Summary** - Extracts key metrics from HTML report
+- ✅ **Multiple Recipients** - Send to team members with CC support
+- ✅ **Flexible Attachments** - HTML reports, screenshots, JSON files
+- ✅ **Custom Analysis** - Add detailed findings and recommendations
+- ✅ **SLA-Based Status** - Auto-determines PASS/FAIL based on thresholds
+- ✅ **Gmail/Outlook/Custom SMTP** - Support for major email providers
+
+**SLA Criteria (Auto-determined):**
+- FAIL if average response time > 1000ms
+- FAIL if failure rate > 5%
+- PASS if both criteria met
 
 ### As a Module
 
@@ -969,7 +1145,16 @@ Read data from Google Sheets:
 - Authentication with credentials.json
 - Used for verification and data retrieval
 
-### 9. jenkins-client.js
+### 9. send-email-report.js
+Send load test reports via email:
+- Professional HTML email templates (basic & detailed)
+- Auto-extract metrics from HTML reports
+- Multiple recipients and CC support
+- Flexible attachment handling
+- Gmail, Outlook, and custom SMTP support
+- SLA-based PASS/FAIL status determination
+
+### 10. jenkins-client.js
 Jenkins CI/CD integration:
 - List and trigger jobs
 - Monitor build status
@@ -977,10 +1162,10 @@ Jenkins CI/CD integration:
 - Parameterized builds
 - Wait for completion
 
-### 10. config.json
-Configuration file for Grafana and New Relic connection details (see Configuration section above).
+### 11. config.json
+Configuration file for Grafana, New Relic, Jenkins, and Email settings (see Configuration section above).
 
-### 11. .gitignore
+### 12. .gitignore
 Pre-configured to exclude sensitive files:
 - config.json (credentials)
 - Exported dashboard JSON files
