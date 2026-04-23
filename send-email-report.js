@@ -49,7 +49,12 @@ function parseArgs() {
         body: '',
         attach: [],
         config: 'config.json',
-        template: 'detailed'
+        template: 'detailed',
+        // Infrastructure details
+        serviceName: null,
+        pods: null,
+        cpu: null,
+        memory: null
     };
 
     for (let i = 2; i < process.argv.length; i++) {
@@ -89,6 +94,22 @@ function parseArgs() {
                 args.template = nextArg;
                 i++;
                 break;
+            case '--service-name':
+                args.serviceName = nextArg;
+                i++;
+                break;
+            case '--pods':
+                args.pods = nextArg;
+                i++;
+                break;
+            case '--cpu':
+                args.cpu = nextArg;
+                i++;
+                break;
+            case '--memory':
+                args.memory = nextArg;
+                i++;
+                break;
             case '--help':
             case '-h':
                 printHelp();
@@ -117,6 +138,10 @@ Optional:
   --attach <paths>       Additional attachments (comma-separated)
   --config <path>        Config file path (default: config.json)
   --template <style>     Email template: basic|detailed (default: detailed)
+  --service-name <name>  Service name being tested
+  --pods <number>        Number of pods running
+  --cpu <value>          CPU per pod (e.g., "3 cores" or "3000m")
+  --memory <value>       Memory per pod (e.g., "3000 MB" or "3 GB")
   --help, -h             Show this help message
 
 Examples:
@@ -357,7 +382,7 @@ function extractTestSummary(htmlPath) {
 }
 
 // Generate HTML email body
-function generateEmailBody(template, summary, customBody) {
+function generateEmailBody(template, summary, customBody, infraDetails) {
     const failureRate = summary ? ((summary.totalFailures / summary.totalRequests) * 100).toFixed(2) : 0;
     const status = summary && (summary.avgResponseTime > 1000 || failureRate > 5) ? 'FAIL' : 'PASS';
     const statusColor = status === 'PASS' ? '#10b981' : '#ef4444';
@@ -734,6 +759,43 @@ function generateEmailBody(template, summary, customBody) {
         
         <!-- Main Content -->
         <div class="content">
+            ${infraDetails && (infraDetails.serviceName || infraDetails.pods || infraDetails.cpu || infraDetails.memory) ? `
+            <!-- Infrastructure Configuration -->
+            <div class="info-card" style="background: #fef3c7; border-color: #fcd34d; margin-bottom: 24px;">
+                <div class="info-card-title" style="color: #92400e; display: flex; align-items: center; gap: 8px;">
+                    <span>🏗️</span>
+                    <span>Infrastructure Configuration</span>
+                </div>
+                <div class="info-card-content" style="color: #78350f;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 12px;">
+                        ${infraDetails.serviceName ? `
+                        <div style="padding: 12px; background: white; border-radius: 6px; border: 1px solid #fde68a;">
+                            <div style="font-size: 11px; color: #92400e; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">Service Name</div>
+                            <div style="font-size: 18px; font-weight: 700; color: #78350f; font-family: 'Courier New', monospace;">${infraDetails.serviceName}</div>
+                        </div>
+                        ` : ''}
+                        ${infraDetails.pods ? `
+                        <div style="padding: 12px; background: white; border-radius: 6px; border: 1px solid #fde68a;">
+                            <div style="font-size: 11px; color: #92400e; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">Pods Running</div>
+                            <div style="font-size: 24px; font-weight: 700; color: #78350f;">${infraDetails.pods} <span style="font-size: 14px; color: #b45309;">pods</span></div>
+                        </div>
+                        ` : ''}
+                        ${infraDetails.cpu ? `
+                        <div style="padding: 12px; background: white; border-radius: 6px; border: 1px solid #fde68a;">
+                            <div style="font-size: 11px; color: #92400e; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">CPU per Pod</div>
+                            <div style="font-size: 24px; font-weight: 700; color: #78350f;">${infraDetails.cpu}</div>
+                        </div>
+                        ` : ''}
+                        ${infraDetails.memory ? `
+                        <div style="padding: 12px; background: white; border-radius: 6px; border: 1px solid #fde68a;">
+                            <div style="font-size: 11px; color: #92400e; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">Memory per Pod</div>
+                            <div style="font-size: 24px; font-weight: 700; color: #78350f;">${infraDetails.memory}</div>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+            ` : ''}
             ${summary && (summary.users > 0 || summary.duration) ? `
             <!-- Test Configuration -->
             <div class="info-card" style="background: #f0fdf4; border-color: #bbf7d0; margin-bottom: 24px;">
@@ -977,8 +1039,16 @@ async function sendEmail(config, args, summary) {
             }
         }
 
+        // Prepare infrastructure details
+        const infraDetails = {
+            serviceName: args.serviceName,
+            pods: args.pods,
+            cpu: args.cpu,
+            memory: args.memory
+        };
+
         // Generate email body
-        const htmlBody = generateEmailBody(args.template, summary, args.body);
+        const htmlBody = generateEmailBody(args.template, summary, args.body, infraDetails);
 
         // Email options
         const mailOptions = {
@@ -1071,5 +1141,6 @@ if (require.main === module) {
 module.exports = {
     sendEmail,
     extractTestSummary,
-    generateEmailBody
+    generateEmailBody,
+    parseArgs
 };
