@@ -328,7 +328,7 @@ node send-email-report.js --to "<EMAIL>" --subject "<SUBJECT>" --report "<PATH_T
 ```
 
 ### Options
-- `--to <email>` - Recipient email (required, comma-separated for multiple)
+- `--to <email>` - Recipient email (optional if using CSV, comma-separated for multiple)
 - `--cc <email>` - CC recipients (optional, comma-separated)
 - `--subject <text>` - Email subject line (required)
 - `--report <path>` - Path to HTML report file (required)
@@ -336,10 +336,52 @@ node send-email-report.js --to "<EMAIL>" --subject "<SUBJECT>" --report "<PATH_T
 - `--attach <paths>` - Additional attachments (optional, comma-separated paths)
 - `--config <path>` - Config file path (default: config.json)
 - `--template <style>` - Email template: basic|detailed (default: detailed)
+- `--stakeholders-csv <path>` - CSV file with stakeholder emails (default: stakeholder-email.csv)
 - `--service-name <name>` - Service name being tested (optional)
 - `--pods <number>` - Number of pods running (optional)
 - `--cpu <value>` - CPU per pod, e.g., "3 cores" or "3000m" (optional)
 - `--memory <value>` - Memory per pod, e.g., "3000 MB" or "3 GB" (optional)
+
+### Stakeholder Email Distribution
+
+You can manage recipient emails using a CSV file instead of specifying them on the command line. This is useful for maintaining a consistent distribution list across multiple tests.
+
+**CSV File Format (stakeholder-email.csv):**
+```csv
+name,email
+Siddharth Sarkhel,siddharth.sarkhel@tothenew.com
+Performance Team,perf-team@example.com
+QA Manager,qa-manager@example.com
+DevOps Lead,devops@example.com
+```
+
+**Usage:**
+- The script automatically reads `stakeholder-email.csv` from the current directory
+- You can specify a different CSV path with `--stakeholders-csv <path>`
+- Emails from CSV are merged with any provided via `--to` flag
+- Duplicates are automatically removed
+- If neither `--to` nor CSV file exists, the command will fail
+
+**Example with CSV:**
+```bash
+# Using default stakeholder-email.csv
+node send-email-report.js \
+  --subject "Load Test Results" \
+  --report "result.html"
+
+# Using custom CSV path
+node send-email-report.js \
+  --stakeholders-csv "team-emails.csv" \
+  --subject "Load Test Results" \
+  --report "result.html"
+
+# Combining CSV with additional recipients
+node send-email-report.js \
+  --to "urgent-alert@example.com" \
+  --subject "Critical: Breaking Point Test" \
+  --report "result.html"
+# This sends to: urgent-alert@example.com + all emails from stakeholder-email.csv
+```
 
 ### Email Templates
 
@@ -491,7 +533,7 @@ npm install nodemailer
       "user": "your-email@gmail.com",
       "pass": "your-app-password"
     },
-    "from": "Load Test Reports <your-email@gmail.com>"
+    "from": "PerformanceAI <your-email@gmail.com>"
   }
 }
 ```

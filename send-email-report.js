@@ -39,6 +39,41 @@ const nodemailer = require('nodemailer');
 const fs = require('fs');
 const path = require('path');
 
+// Function to read emails from CSV file
+function readStakeholdersFromCSV(csvPath) {
+    try {
+        if (!fs.existsSync(csvPath)) {
+            return [];
+        }
+        
+        const content = fs.readFileSync(csvPath, 'utf8');
+        const lines = content.split('\n').map(line => line.trim()).filter(line => line);
+        
+        // Skip header row if it exists
+        const emails = [];
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            // Skip header row (contains "email" or "Email")
+            if (i === 0 && (line.toLowerCase().includes('email') || line.toLowerCase().includes('name'))) {
+                continue;
+            }
+            
+            // Extract email from CSV (handle both single column and multi-column CSV)
+            const parts = line.split(',').map(p => p.trim().replace(/"/g, ''));
+            const email = parts.find(p => p.includes('@'));
+            
+            if (email && email.includes('@')) {
+                emails.push(email);
+            }
+        }
+        
+        return emails;
+    } catch (error) {
+        console.warn(`⚠️  Could not read stakeholders CSV (${csvPath}):`, error.message);
+        return [];
+    }
+}
+
 // Parse command line arguments
 function parseArgs() {
     const args = {
@@ -50,6 +85,7 @@ function parseArgs() {
         attach: [],
         config: 'config.json',
         template: 'detailed',
+        stakeholdersCsv: 'stakeholder-email.csv', // Default CSV path
         // Infrastructure details
         serviceName: null,
         pods: null,
@@ -110,6 +146,10 @@ function parseArgs() {
                 args.memory = nextArg;
                 i++;
                 break;
+            case '--stakeholders-csv':
+                args.stakeholdersCsv = nextArg;
+                i++;
+                break;
             case '--help':
             case '-h':
                 printHelp();
@@ -142,6 +182,7 @@ Optional:
   --pods <number>        Number of pods running
   --cpu <value>          CPU per pod (e.g., "3 cores" or "3000m")
   --memory <value>       Memory per pod (e.g., "3000 MB" or "3 GB")
+  --stakeholders-csv <path>  Path to CSV with stakeholder emails (default: stakeholder-email.csv)
   --help, -h             Show this help message
 
 Examples:
@@ -198,7 +239,7 @@ function loadConfig(configPath) {
       "user": "your-email@gmail.com",
       "pass": "your-app-password"
     },
-    "from": "Load Test Reports <your-email@gmail.com>"
+    "from": "PerformanceAI <your-email@gmail.com>"
   }
 }`);
         process.exit(1);
@@ -264,6 +305,23 @@ function extractTestSummary(htmlPath) {
                 const jsonStr = html.substring(startIdx, endIdx);
                 const data = JSON.parse(jsonStr);
                 
+                // Create a percentile lookup map from response_time_statistics
+                const percentileMap = new Map();
+                if (data.response_time_statistics && Array.isArray(data.response_time_statistics)) {
+                    data.response_time_statistics.forEach(stat => {
+                        percentileMap.set(stat.name, {
+                            p50: stat['0.5'] || stat['0.50'] || 0,
+                            p60: stat['0.6'] || stat['0.60'] || 0,
+                            p70: stat['0.7'] || stat['0.70'] || 0,
+                            p80: stat['0.8'] || stat['0.80'] || 0,
+                            p90: stat['0.9'] || stat['0.90'] || 0,  // P90 from percentile chart!
+                            p95: stat['0.95'] || 0,  // P95 from percentile chart!
+                            p99: stat['0.99'] || 0,
+                            p100: stat['1.0'] || stat['1'] || 0
+                        });
+                    });
+                }
+                
                 // Extract from requests_statistics (Locust's actual field name)
                 if (data.requests_statistics && Array.isArray(data.requests_statistics)) {
                     // Find the "Aggregated" row which contains total stats
@@ -281,18 +339,26 @@ function extractTestSummary(htmlPath) {
                     // Extract individual endpoint stats (exclude Aggregated)
                     summary.endpoints = data.requests_statistics
                         .filter(stat => stat.name !== 'Aggregated')
-                        .map(stat => ({
-                            name: stat.name,
-                            method: stat.method || 'GET',
-                            requests: stat.num_requests || 0,
-                            failures: stat.num_failures || 0,
-                            avgTime: Math.round(stat.avg_response_time || 0),
-                            medianTime: Math.round(stat.median_response_time || 0),
-                            p90Time: Math.round(stat.response_time_percentile_0_90 || stat['response_time_percentile_0.90'] || 0),
-                            p95Time: Math.round(stat.response_time_percentile_0_95 || stat['response_time_percentile_0.95'] || 0),
-                            p99Time: Math.round(stat.response_time_percentile_0_99 || stat['response_time_percentile_0.99'] || 0),
-                            rps: parseFloat((stat.total_rps || stat.current_rps || 0).toFixed(2))
-                        }))
+                        .map(stat => {
+                            // Get percentiles from the percentile chart data (response_time_statistics)
+                            const percentiles = percentileMap.get(stat.name) || {
+                                p50: 0, p60: 0, p70: 0, p80: 0, p90: 0, p95: 0, p99: 0, p100: 0
+                            };
+                            
+                            return {
+                                name: stat.name,
+                                method: stat.method || 'GET',
+                                requests: stat.num_requests || 0,
+                                failures: stat.num_failures || 0,
+                                avgTime: Math.round(stat.avg_response_time || 0),
+                                medianTime: Math.round(stat.median_response_time || 0),
+                                // Use actual P90/P95/P99 from percentile chart data
+                                p90Time: Math.round(percentiles.p90) || 0,
+                                p95Time: Math.round(percentiles.p95) || 0,
+                                p99Time: Math.round(percentiles.p99) || 0,
+                                rps: parseFloat((stat.total_rps || stat.current_rps || 0).toFixed(2))
+                            };
+                        })
                         .sort((a, b) => b.requests - a.requests)
                         .slice(0, 10); // Top 10 endpoints
                 }
@@ -1104,10 +1170,26 @@ async function sendEmail(config, args, summary) {
 async function main() {
     const args = parseArgs();
 
+    // Read stakeholders from CSV if file exists
+    const stakeholderEmails = readStakeholdersFromCSV(args.stakeholdersCsv);
+    if (stakeholderEmails.length > 0) {
+        console.log(`📧 Found ${stakeholderEmails.length} stakeholder email(s) in ${args.stakeholdersCsv}`);
+        
+        // Merge with --to emails
+        if (args.to) {
+            const existingEmails = args.to.split(',').map(e => e.trim());
+            const allEmails = [...new Set([...existingEmails, ...stakeholderEmails])];
+            args.to = allEmails.join(',');
+        } else {
+            args.to = stakeholderEmails.join(',');
+        }
+    }
+
     // Validate required arguments
     if (!args.to || !args.subject || !args.report) {
         console.error('❌ Missing required arguments!');
-        console.error('\nRequired: --to, --subject, --report');
+        console.error('\nRequired: --subject, --report');
+        console.error('Required: --to OR valid stakeholder-email.csv file');
         console.error('Run with --help for usage information');
         process.exit(1);
     }

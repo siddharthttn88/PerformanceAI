@@ -41,6 +41,6 @@
       "user": "your-email@gmail.com",
       "pass": "your-gmail-app-password"
     },
-    "from": "Load Test Reports <your-email@gmail.com>"
+    "from": "PerformanceAI <your-email@gmail.com>"
   }
 }

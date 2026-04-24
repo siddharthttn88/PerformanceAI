@@ -170,7 +170,7 @@ The script reads configuration from `config.json`:
         "user": "your-email@gmail.com",
         "pass": "your-app-password"
       },
-      "from": "Load Test Reports <your-email@gmail.com>"
+      "from": "PerformanceAI <your-email@gmail.com>"
     }
   }
 }
@@ -610,10 +610,31 @@ node send-email-report.js \
   --subject "Quick Test Results" \
   --report "result.html" \
   --template basic
+
+# Using stakeholder CSV for distribution list
+# Create stakeholder-email.csv with emails first
+node send-email-report.js \
+  --subject "Load Test Results - Weekly Report" \
+  --report "result.html"
+# Automatically reads emails from stakeholder-email.csv
 ```
 
+**CSV Email Distribution:**
+Create a `stakeholder-email.csv` file to manage your distribution list:
+```csv
+name,email
+Siddharth Sarkhel,siddharth.sarkhel@tothenew.com
+Performance Team,perf-team@example.com
+QA Manager,qa-manager@example.com
+```
+
+The script will automatically read this file and send to all listed emails. You can:
+- Use `--stakeholders-csv <path>` to specify a different CSV file
+- Combine CSV emails with `--to` flag (duplicates are removed)
+- Skip `--to` entirely if CSV file exists with valid emails
+
 **Command Line Options:**
-- `--to <email>` - Recipient email (required, comma-separated for multiple)
+- `--to <email>` - Recipient email (optional if using CSV, comma-separated for multiple)
 - `--cc <email>` - CC recipients (optional, comma-separated)
 - `--subject <text>` - Email subject line (required)
 - `--report <path>` - Path to HTML report file (required)
@@ -621,6 +642,7 @@ node send-email-report.js \
 - `--attach <paths>` - Additional attachments (optional, comma-separated)
 - `--config <path>` - Config file path (default: config.json)
 - `--template <style>` - Email template: basic|detailed (default: detailed)
+- `--stakeholders-csv <path>` - CSV file with stakeholder emails (default: stakeholder-email.csv)
 - `--service-name <name>` - Service name being tested (optional)
 - `--pods <number>` - Number of pods running (optional)
 - `--cpu <value>` - CPU per pod, e.g., "3 cores" or "3000m" (optional)
@@ -683,7 +705,7 @@ Add email configuration to `config.json`:
       "user": "your-email@gmail.com",
       "pass": "your-app-password"
     },
-    "from": "Load Test Reports <your-email@gmail.com>"
+    "from": "PerformanceAI <your-email@gmail.com>"
   }
 }
 ```

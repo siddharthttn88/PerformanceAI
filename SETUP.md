@@ -69,7 +69,7 @@ Edit `config.json` and replace the following:
     "user": "yourname@gmail.com",
     "pass": "abcd efgh ijkl mnop"
   },
-  "from": "Load Test Reports <yourname@gmail.com>"
+  "from": "PerformanceAI <yourname@gmail.com>"
 }
 ```
 
@@ -84,7 +84,7 @@ Edit `config.json` and replace the following:
     "user": "yourname@outlook.com",
     "pass": "your-password"
   },
-  "from": "Load Test Reports <yourname@outlook.com>"
+  "from": "PerformanceAI <yourname@outlook.com>"
 }
 ```
 
