@@ -459,7 +459,17 @@ function extractTestSummary(htmlPath) {
 // Generate HTML email body
 function generateEmailBody(template, summary, customBody, infraDetails) {
     const failureRate = summary ? ((summary.totalFailures / summary.totalRequests) * 100).toFixed(2) : 0;
-    const status = summary && (summary.avgResponseTime > 1000 || failureRate > 5) ? 'FAIL' : 'PASS';
+    
+    // Check for SLA violations (avg response time, error rate, P90, P95)
+    const SLA_THRESHOLD = 1000; // 1 second
+    const ERROR_THRESHOLD = 5; // 5%
+    
+    const avgViolation = summary && summary.avgResponseTime > SLA_THRESHOLD;
+    const errorViolation = failureRate > ERROR_THRESHOLD;
+    const p90Violations = summary && summary.endpoints ? summary.endpoints.filter(e => e.p90Time > SLA_THRESHOLD) : [];
+    const p95Violations = summary && summary.endpoints ? summary.endpoints.filter(e => e.p95Time > SLA_THRESHOLD) : [];
+    
+    const status = (avgViolation || errorViolation || p90Violations.length > 0 || p95Violations.length > 0) ? 'FAIL' : 'PASS';
     const statusColor = status === 'PASS' ? '#10b981' : '#ef4444';
     const statusBg = status === 'PASS' ? '#d1fae5' : '#fee2e2';
     const statusEmoji = status === 'PASS' ? '✅' : '🔴';
@@ -1224,8 +1234,24 @@ async function main() {
         console.log(`   Failures: ${summary.totalFailures.toLocaleString()}`);
         console.log(`   Avg Response: ${summary.avgResponseTime}ms`);
         const failureRate = ((summary.totalFailures / summary.totalRequests) * 100).toFixed(2);
-        const status = summary.avgResponseTime > 1000 || failureRate > 5 ? 'FAIL' : 'PASS';
+        
+        // Check for SLA violations
+        const SLA_THRESHOLD = 1000;
+        const ERROR_THRESHOLD = 5;
+        const avgViolation = summary.avgResponseTime > SLA_THRESHOLD;
+        const errorViolation = failureRate > ERROR_THRESHOLD;
+        const p90Violations = summary.endpoints ? summary.endpoints.filter(e => e.p90Time > SLA_THRESHOLD) : [];
+        const p95Violations = summary.endpoints ? summary.endpoints.filter(e => e.p95Time > SLA_THRESHOLD) : [];
+        
+        const status = (avgViolation || errorViolation || p90Violations.length > 0 || p95Violations.length > 0) ? 'FAIL' : 'PASS';
         console.log(`   Status: ${status}`);
+        
+        if (status === 'FAIL') {
+            if (avgViolation) console.log(`   ⚠️  Avg response time (${summary.avgResponseTime}ms) exceeds SLA (${SLA_THRESHOLD}ms)`);
+            if (errorViolation) console.log(`   ⚠️  Error rate (${failureRate}%) exceeds threshold (${ERROR_THRESHOLD}%)`);
+            if (p90Violations.length > 0) console.log(`   ⚠️  ${p90Violations.length} endpoint(s) with P90 > ${SLA_THRESHOLD}ms`);
+            if (p95Violations.length > 0) console.log(`   ⚠️  ${p95Violations.length} endpoint(s) with P95 > ${SLA_THRESHOLD}ms`);
+        }
     }
 
     // Send email
