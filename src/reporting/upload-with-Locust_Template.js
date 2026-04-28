@@ -196,11 +196,14 @@ async function uploadToGoogleSheet() {
         
         // Calculate metrics
         const apiStats = reportData.stats.filter(s => s.name !== 'Aggregated');
-        const totalRequests = apiStats.reduce((sum, s) => sum + s.num_requests, 0);
-        const totalFailures = apiStats.reduce((sum, s) => sum + s.num_failures, 0);
+        const aggregated = reportData.stats.find(s => s.name === 'Aggregated');
+        
+        // Use Aggregated row for totals (correct weighted averages)
+        const totalRequests = aggregated ? aggregated.num_requests : apiStats.reduce((sum, s) => sum + s.num_requests, 0);
+        const totalFailures = aggregated ? aggregated.num_failures : apiStats.reduce((sum, s) => sum + s.num_failures, 0);
         const errorRate = totalRequests > 0 ? (totalFailures / totalRequests * 100).toFixed(2) : 0;
-        const totalRPS = apiStats.reduce((sum, s) => sum + s.total_rps, 0);
-        const avgResponseTime = apiStats.reduce((sum, s) => sum + s.avg_response_time, 0) / apiStats.length;
+        const totalRPS = aggregated ? aggregated.total_rps : apiStats.reduce((sum, s) => sum + s.total_rps, 0);
+        const avgResponseTime = aggregated ? aggregated.avg_response_time : apiStats.reduce((sum, s) => sum + s.avg_response_time, 0) / apiStats.length;
         
         // Calculate target TPS (if not provided)
         const targetTPS = options.targettps || Math.round(options.users / 60);
@@ -302,8 +305,8 @@ async function uploadToGoogleSheet() {
         // Add API data rows
         apiStats.forEach(stat => {
             const perc = reportData.percentiles[stat.name] || {};
-            const p90 = perc['0.90'] ? Math.round(perc['0.90']) : Math.round(stat.median_response_time);
-            const p95 = perc['0.95'] ? Math.round(perc['0.95']) : Math.round(stat.median_response_time);
+            const p90 = Math.round(perc['0.9'] || perc['0.90'] || stat.median_response_time);
+            const p95 = Math.round(perc['0.95'] || stat.median_response_time);
             
             rows.push([
                 stat.method,
