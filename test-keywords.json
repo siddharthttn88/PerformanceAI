@@ -12,7 +12,8 @@
         "service": "{service}",
         "sheet": "{sheet}",
         "link": "{link}"
-      }
+      },
+      "description": "A breakpoint test is a type of performance test where the load is gradually increased until the system breaks or reaches its maximum capacity. This helps identify the breaking point of the system and understand how it behaves under stress. If the parameters are not given by user for first iteration then them for input."
     },
     "load-test": {
       "prompt": "Run a load test with {users} users, {rampup} rampup, {duration} duration. Result Sheet Name: {sheet} Service: {service}",
@@ -23,7 +24,8 @@
         "service": "{service}",
         "sheet": "{sheet}",
         "link": "{link}"
-      }
+      },
+      "description": "A load test is used to verify the behavior of the system under normal and peak conditions. It simulates multiple users accessing the system simultaneously to identify performance bottlenecks. If the parameters are not given by user for first iteration then ask them for input."
     },
     "smoke-test": {
       "prompt": "Run a smoke test with {users} users, {rampup} rampup, {duration} duration. Result Sheet Name: {sheet} Service: {service}",
@@ -34,7 +36,8 @@
         "service": "{service}",
         "sheet": "{sheet}",
         "link": "{link}"
-      }
+      },
+      "description": "A smoke test is a quick, lightweight test to verify basic functionality and ensure the system is stable enough for further testing. It typically uses minimal load (few users) and short duration. If the parameters are not given by user for first iteration then ask them for input."
     }
   }
 }
