@@ -1,0 +1,40 @@
+{
+  "keywords": {
+    "breakpoint-test": {
+      "prompt": "Do a breakpoint test starting with {users} users, {rampup} rampup, {duration} duration. Increase user by {progression} and rampup by {rampupProgression} and duration by {durationProgression} for each iteration. Result Sheet Name: {sheet} Service: {service}",
+      "lastUsed": {
+        "users": "{users}",
+        "rampup": "{rampup}",
+        "duration": "{duration}",
+        "progression": "{progression}",
+        "rampupProgression": "{rampupProgression}",
+        "durationProgression": "{durationProgression}",
+        "service": "{service}",
+        "sheet": "{sheet}",
+        "link": "{link}"
+      }
+    },
+    "load-test": {
+      "prompt": "Run a load test with {users} users, {rampup} rampup, {duration} duration. Result Sheet Name: {sheet} Service: {service}",
+      "lastUsed": {
+        "users": "{users}",
+        "rampup": "{rampup}",
+        "duration": "{duration}",
+        "service": "{service}",
+        "sheet": "{sheet}",
+        "link": "{link}"
+      }
+    },
+    "smoke-test": {
+      "prompt": "Run a smoke test with {users} users, {rampup} rampup, {duration} duration. Result Sheet Name: {sheet} Service: {service}",
+      "lastUsed": {
+        "users": "{users}",
+        "rampup": "{rampup}",
+        "duration": "{duration}",
+        "service": "{service}",
+        "sheet": "{sheet}",
+        "link": "{link}"
+      }
+    }
+  }
+}

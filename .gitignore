@@ -5,6 +5,7 @@ credentials.json
 # Exported dashboard files (may contain sensitive data)
 *.json
 !package.json
+!test-keywords.json
 !config.example.json
 !credentials.example.json
 
