@@ -7,7 +7,7 @@
  *   node get-pod-metrics-enhanced.js <service-name> <minutes> (uses current time)
  */
 
-const grafana = require('./grafana-reader.js');
+const grafana = require('../clients/grafana-reader.js');
 
 async function getPodMetricsEnhanced(serviceName, startEpoch, endEpoch) {
     try {

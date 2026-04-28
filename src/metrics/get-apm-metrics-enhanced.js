@@ -13,7 +13,7 @@
  *   node get-apm-metrics-enhanced.js <app-name> <minutes> (uses current time)
  */
 
-const newrelic = require('./newrelic-client.js');
+const newrelic = require('../clients/newrelic-client.js');
 
 async function getApmMetricsEnhanced(applicationName, startEpoch, endEpoch, topN = 10) {
     try {

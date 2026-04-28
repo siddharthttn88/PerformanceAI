@@ -2,7 +2,7 @@
  * Query metrics for a specific time range
  */
 
-const grafana = require('./grafana-reader.js');
+const grafana = require('../clients/grafana-reader.js');
 
 // Parse date string in format: "31/3/2026, 3:50:20 pm"
 function parseTimestamp(dateStr) {

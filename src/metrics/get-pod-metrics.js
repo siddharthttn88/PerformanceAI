@@ -2,7 +2,7 @@
  * Get infrastructure metrics for a specific service's pods
  */
 
-const grafana = require('./grafana-reader.js');
+const grafana = require('../clients/grafana-reader.js');
 
 async function getPodMetrics(serviceName, minutes = 5) {
     try {

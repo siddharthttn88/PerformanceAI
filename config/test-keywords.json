@@ -3,12 +3,12 @@
     "breakpoint-test": {
       "prompt": "Do a breakpoint test starting with {users} users, {rampup} rampup, {duration} duration. Increase user by {progression} and rampup by {rampupProgression} and duration by {durationProgression} for each iteration. Result Sheet Name: {sheet} Service: {service}",
       "lastUsed": {
-        "users": "{users}",
-        "rampup": "{rampup}",
-        "duration": "{duration}",
-        "progression": "{progression}",
-        "rampupProgression": "{rampupProgression}",
-        "durationProgression": "{durationProgression}",
+        "users": "50000",
+        "rampup": "4min",
+        "duration": "8min",
+        "progression": "10000",
+        "rampupProgression": "1min",
+        "durationProgression": "2min",
         "service": "{service}",
         "sheet": "{sheet}",
         "link": "{link}"

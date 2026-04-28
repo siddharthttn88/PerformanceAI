@@ -2,7 +2,7 @@
  * Get APM application metrics from New Relic
  */
 
-const newrelic = require('./newrelic-client.js');
+const newrelic = require('../clients/newrelic-client.js');
 
 async function getApmMetrics(applicationName, minutes = 5) {
     try {

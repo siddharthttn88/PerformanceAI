@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const { runNrqlQuery } = require('./newrelic-client.js');
+const { runNrqlQuery } = require('../clients/newrelic-client.js');
 const { readFileSync } = require('fs');
 const { join } = require('path');
 
