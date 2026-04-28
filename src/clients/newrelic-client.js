@@ -23,7 +23,7 @@ const path = require('path');
 let NEW_RELIC_API_KEY, NEW_RELIC_ACCOUNT_ID, NEW_RELIC_REGION;
 
 try {
-    const configPath = path.join(__dirname, 'config.json');
+    const configPath = path.join(__dirname, '..', '..', 'config', 'config.json');
     const configData = fs.readFileSync(configPath, 'utf8');
     const config = JSON.parse(configData);
     

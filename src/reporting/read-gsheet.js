@@ -11,7 +11,7 @@ if (args.length < 1) {
     console.error('Options:');
     console.error('  --sheet <name>       Sheet name (default: first sheet)');
     console.error('  --range <A1:Z100>    Cell range to read (default: all data)');
-    console.error('  --creds <path>       Path to credentials JSON (default: credentials.json)');
+    console.error('  --creds <path>       Path to credentials JSON (default: config/credentials.json)');
     console.error('  --format <json|csv>  Output format (default: json)');
     console.error('');
     console.error('Examples:');
@@ -28,7 +28,7 @@ const spreadsheetId = args[0];
 const options = {
     sheet: null,
     range: null,
-    creds: 'credentials.json',
+    creds: 'config/credentials.json',
     format: 'json'
 };
 

@@ -15,7 +15,7 @@ if (args.length < 2) {
   console.log('  --rampup <time>        Ramp-up time (e.g., "1 minute")');
   console.log('  --status <PASS|FAIL>   Test status (auto-calculated if not provided based on 1sec SLA)');
   console.log('  --comment <text>       Test comment');
-  console.log('  --creds <file>         Credentials file (default: credentials.json)');
+  console.log('  --creds <file>         Credentials file (default: config/credentials.json)');
   console.log('\nSLA: Auto FAIL if any API avg > 1000ms or has failures');
   process.exit(1);
 }
@@ -31,7 +31,7 @@ const options = {
   statusManual: false,
   comment: '',
   rampup: '1 minute',
-  credsFile: 'credentials.json',
+  credsFile: 'config/credentials.json',
 };
 
 for (let i = 2; i < args.length; i++) {

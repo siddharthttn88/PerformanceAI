@@ -13,7 +13,7 @@ if (args.length < 2) {
     console.error('  --rampup <time>      Ramp-up time (e.g., "1 minute", "4 minutes")');
     console.error('  --sheet <name>       Sheet name (default: first sheet)');
     console.error('  --comment <text>     Infrastructure/config comment');
-    console.error('  --creds <path>       Credentials file (default: credentials.json)');
+    console.error('  --creds <path>       Credentials file (default: config/credentials.json)');
     console.error('  --targettps <tps>    Target TPS for display');
     console.error('  --timezone <tz>      Timezone ("IST" or "local", default: local)');
     console.error('');

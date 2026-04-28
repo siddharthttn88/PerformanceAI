@@ -6,7 +6,7 @@ const { readFileSync } = require('fs');
 const { join } = require('path');
 
 // Read configuration
-const configPath = join(__dirname, 'config.json');
+const configPath = join(__dirname, '..', '..', 'config', 'config.json');
 const config = JSON.parse(readFileSync(configPath, 'utf8'));
 
 // Parse Jenkins instance from command line args (--jenkins=jenkins-local or --jenkins=jenkins-locust)

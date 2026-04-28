@@ -83,9 +83,9 @@ function parseArgs() {
         report: null,
         body: '',
         attach: [],
-        config: 'config.json',
+        config: 'config/config.json',
         template: 'detailed',
-        stakeholdersCsv: 'stakeholder-email.csv', // Default CSV path
+        stakeholdersCsv: 'config/stakeholder-email.csv', // Default CSV path
         // Infrastructure details
         serviceName: null,
         pods: null,

@@ -25,7 +25,7 @@ const path = require('path');
 let GRAFANA_URL, GRAFANA_TOKEN;
 
 try {
-    const configPath = path.join(__dirname, 'config.json');
+    const configPath = path.join(__dirname, '..', '..', 'config', 'config.json');
     const configData = fs.readFileSync(configPath, 'utf8');
     const config = JSON.parse(configData);
     
