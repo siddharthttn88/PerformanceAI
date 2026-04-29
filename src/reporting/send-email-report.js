@@ -521,182 +521,230 @@ function generateEmailBody(template, summary, customBody, infraDetails) {
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             line-height: 1.6; 
-            color: #1f2937; 
-            background-color: #f3f4f6;
-            padding: 20px;
+            color: #1e293b; 
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            padding: 32px 20px;
         }
         .email-wrapper { 
-            max-width: 900px; 
+            max-width: 920px; 
             margin: 0 auto; 
             background: #ffffff;
-            border-radius: 12px;
+            border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
         }
         
         /* Header Styles */
         .header { 
-            background: linear-gradient(135deg, #cc0066 0%, #ff0080 50%, #cc0066 100%);
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%);
             color: white; 
-            padding: 40px 30px;
+            padding: 48px 40px;
             position: relative;
+            overflow: hidden;
         }
         .header::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxkZWZzPjxwYXR0ZXJuIGlkPSJhIiB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPjxwYXRoIGQ9Ik0wIDQwTDQwIDBaTTQwIDQwTDAgMDBaIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMC41IiBvcGFjaXR5PSIwLjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjYSkiLz48L3N2Zz4=');
-            opacity: 0.15;
+            top: -50%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -50%;
+            left: -10%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
         }
         .header-content { position: relative; z-index: 1; }
         .header h1 { 
-            font-size: 32px; 
+            font-size: 28px; 
             font-weight: 700;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
             letter-spacing: -0.5px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
         .header-meta { 
-            font-size: 14px; 
-            opacity: 0.9;
+            font-size: 15px; 
+            opacity: 0.95;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 16px;
             flex-wrap: wrap;
         }
         .header-meta-item {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 6px 14px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
         }
         
         /* Status Badge */
         .status-section {
-            background: #f9fafb;
-            padding: 24px 30px;
-            border-bottom: 1px solid #e5e7eb;
+            background: linear-gradient(to right, #f8fafc 0%, #ffffff 50%, #f8fafc 100%);
+            padding: 32px 40px;
+            border-bottom: 2px solid #e5e7eb;
             text-align: center;
         }
         .status-badge { 
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            padding: 12px 24px; 
-            border-radius: 8px;
-            font-weight: 600;
+            gap: 10px;
+            padding: 12px 28px; 
+            border-radius: 50px;
+            font-weight: 700;
             font-size: 16px;
             background: ${statusBg};
             color: ${statusColor};
-            border: 2px solid ${statusColor};
+            border: 3px solid ${statusColor};
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s;
+        }
+        .status-badge:hover {
+            transform: translateY(-2px);
         }
         
         /* Main Content */
-        .content { padding: 30px; }
+        .content { padding: 40px; }
         
         /* Executive Summary */
         .executive-summary {
-            background: linear-gradient(135deg, #fff0f7 0%, #ffe6f2 100%);
-            padding: 24px;
-            border-radius: 8px;
-            margin-bottom: 24px;
-            border: 1px solid #ffcce6;
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            padding: 32px;
+            border-radius: 12px;
+            margin-bottom: 32px;
+            border: 2px solid #bfdbfe;
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1);
         }
         .executive-summary h2 {
-            color: #cc0066;
+            color: #1e40af;
             font-size: 18px;
-            margin-bottom: 16px;
+            font-weight: 700;
+            margin-bottom: 14px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+        }
+        .executive-summary p {
+            color: #1e40af;
+            font-size: 15px;
+            line-height: 1.8;
         }
         
         /* Metrics Grid */
         .metrics-grid { 
             display: grid; 
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px; 
-            margin: 24px 0;
+            gap: 20px; 
+            margin: 32px 0;
         }
         .metric-card { 
-            background: #ffffff;
-            padding: 20px; 
-            border-radius: 8px;
-            border: 1px solid #e5e7eb;
-            transition: transform 0.2s, box-shadow 0.2s;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            padding: 24px; 
+            border-radius: 12px;
+            border: 2px solid #e5e7eb;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, #3b82f6 0%, #60a5fa 100%);
         }
         .metric-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border-color: #3b82f6;
         }
         .metric-label { 
             font-size: 12px; 
-            color: #6b7280; 
+            color: #64748b; 
             text-transform: uppercase; 
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
         }
         .metric-value { 
-            font-size: 28px; 
+            font-size: 26px; 
             font-weight: 700; 
-            color: #111827;
-            line-height: 1.2;
+            color: #0f172a;
+            line-height: 1;
+            margin-bottom: 8px;
         }
         .metric-unit {
-            font-size: 14px;
-            color: #6b7280;
-            font-weight: 400;
+            font-size: 16px;
+            color: #64748b;
+            font-weight: 500;
         }
         .metric-trend {
-            font-size: 12px;
-            margin-top: 8px;
-            padding-top: 8px;
-            border-top: 1px solid #f3f4f6;
-            color: #6b7280;
+            font-size: 13px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #e5e7eb;
+            color: #64748b;
+            font-weight: 500;
         }
         
         /* Section Headers */
         .section { 
-            margin: 32px 0; 
+            margin: 40px 0; 
         }
         .section-header {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 16px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid #e5e7eb;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 3px solid #e5e7eb;
+            background: linear-gradient(to right, #f8fafc 0%, transparent 100%);
+            padding: 16px;
+            border-radius: 8px;
         }
         .section-title { 
             font-size: 20px;
             font-weight: 700;
-            color: #111827;
+            color: #0f172a;
             margin: 0;
+            letter-spacing: -0.5px;
         }
         .section-icon {
-            font-size: 24px;
+            font-size: 28px;
         }
         
         /* Analysis Box */
         .analysis-box { 
-            background: #fffbeb;
-            padding: 24px; 
-            border-left: 4px solid #f59e0b;
-            border-radius:0 8px 8px 0;
-            margin: 20px 0;
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            padding: 28px; 
+            border-left: 5px solid #f59e0b;
+            border-radius: 0 12px 12px 0;
+            margin: 24px 0;
+            box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.1);
         }
         .analysis-box h3 { 
             color: #92400e;
-            font-size: 16px;
-            margin-bottom: 12px;
-            font-weight: 600;
+            font-size: 18px;
+            margin-bottom: 14px;
+            font-weight: 700;
         }
         .analysis-box p {
             color: #78350f;
-            line-height: 1.8;
-            margin: 8px 0;
+            line-height: 1.9;
+            margin: 10px 0;
+            font-size: 15px;
         }
         
         /* Data Table */
@@ -704,116 +752,130 @@ function generateEmailBody(template, summary, customBody, infraDetails) {
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
-            margin: 16px 0;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
+            margin: 20px 0;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
             overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         }
         .data-table thead {
-            background: #f9fafb;
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
         }
         .data-table th {
-            padding: 12px 16px;
+            padding: 16px 18px;
             text-align: left;
-            font-weight: 600;
-            font-size: 12px;
-            color: #6b7280;
+            font-weight: 700;
+            font-size: 13px;
+            color: #ffffff;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 2px solid #e5e7eb;
+            letter-spacing: 0.8px;
         }
         .data-table td {
-            padding: 12px 16px;
-            border-bottom: 1px solid #f3f4f6;
-            color: #374151;
+            padding: 16px 18px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #334155;
+            font-size: 14px;
         }
         .data-table tbody tr:last-child td {
             border-bottom: none;
         }
         .data-table tbody tr:hover {
-            background: #f9fafb;
+            background: linear-gradient(to right, #f8fafc 0%, #ffffff 100%);
+            transition: background 0.2s;
         }
         
         /* Info Cards */
         .info-card {
-            background: #fff0f7;
-            border: 1px solid #ffcce6;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 16px 0;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 28px;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         }
         .info-card-title {
-            font-weight: 600;
-            color: #cc0066;
-            margin-bottom: 12px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 16px;
             font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         .info-card-content {
-            color: #990050;
-            line-height: 1.8;
+            color: #475569;
+            line-height: 1.9;
+            font-size: 15px;
         }
         
         /* Issue Badge */
         .issue-badge {
             display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        .issue-critical { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
-        .issue-warning { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
-        .issue-info { background: #fff0f7; color: #cc0066; border: 1px solid #ffcce6; }
+        .issue-critical { background: #fee2e2; color: #991b1b; border: 2px solid #fecaca; }
+        .issue-warning { background: #fef3c7; color: #92400e; border: 2px solid #fde68a; }
+        .issue-info { background: #dbeafe; color: #1e40af; border: 2px solid #bfdbfe; }
         
         /* Attachment Section */
         .attachment-section { 
-            background: #ecfdf5;
-            padding: 20px; 
-            border-left: 4px solid #10b981;
-            border-radius: 0 8px 8px 0;
-            margin: 24px 0;
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            padding: 24px; 
+            border-left: 5px solid #10b981;
+            border-radius: 0 12px 12px 0;
+            margin: 28px 0;
+            box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.1);
         }
         .attachment-title {
-            font-weight: 600;
+            font-weight: 700;
             color: #065f46;
-            margin-bottom: 8px;
-            font-size: 14px;
+            margin-bottom: 10px;
+            font-size: 16px;
         }
         .attachment-description {
             color: #047857;
-            font-size: 14px;
+            font-size: 15px;
+            line-height: 1.7;
         }
         
         /* Footer */
         .footer { 
-            background: #f9fafb;
-            padding: 24px 30px;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            padding: 32px 40px;
             text-align: center;
-            font-size: 13px;
-            color: #6b7280;
-            border-top: 1px solid #e5e7eb;
+            font-size: 14px;
+            color: #64748b;
+            border-top: 3px solid #cbd5e1;
         }
         .footer-brand {
-            font-weight: 600;
-            color: #111827;
-            margin-bottom: 8px;
-            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 10px;
+            font-size: 16px;
+            letter-spacing: -0.5px;
         }
         .footer-tech {
-            color: #9ca3af;
-            margin: 8px 0;
+            color: #64748b;
+            margin: 10px 0;
+            font-weight: 500;
         }
         
         /* Responsive */
         @media only screen and (max-width: 600px) {
-            .email-wrapper { border-radius: 0; }
-            .header { padding: 30px 20px; }
-            .content { padding: 20px; }
+            body { padding: 16px; }
+            .email-wrapper { border-radius: 12px; }
+            .header { padding: 32px 24px; }
+            .content { padding: 24px; }
             .metrics-grid { grid-template-columns: 1fr; }
             .header h1 { font-size: 24px; }
-            .metric-value { font-size: 24px; }
+            .metric-value { font-size: 22px; }
+            .section-title { font-size: 18px; }
+            .footer { padding: 24px; }
         }
     </style>
 </head>
@@ -859,25 +921,25 @@ function generateEmailBody(template, summary, customBody, infraDetails) {
                         ${infraDetails.serviceName ? `
                         <div style="padding: 12px; background: white; border-radius: 6px; border: 1px solid #fde68a;">
                             <div style="font-size: 11px; color: #92400e; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">Service Name</div>
-                            <div style="font-size: 18px; font-weight: 700; color: #78350f; font-family: 'Courier New', monospace;">${infraDetails.serviceName}</div>
+                            <div style="font-size: 15px; font-weight: 700; color: #78350f; font-family: 'Courier New', monospace;">${infraDetails.serviceName}</div>
                         </div>
                         ` : ''}
                         ${infraDetails.pods ? `
                         <div style="padding: 12px; background: white; border-radius: 6px; border: 1px solid #fde68a;">
                             <div style="font-size: 11px; color: #92400e; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">Pods Running</div>
-                            <div style="font-size: 24px; font-weight: 700; color: #78350f;">${infraDetails.pods} <span style="font-size: 14px; color: #b45309;">pods</span></div>
+                            <div style="font-size: 20px; font-weight: 700; color: #78350f;">${infraDetails.pods} <span style="font-size: 13px; color: #b45309;">pods</span></div>
                         </div>
                         ` : ''}
                         ${infraDetails.cpu ? `
                         <div style="padding: 12px; background: white; border-radius: 6px; border: 1px solid #fde68a;">
                             <div style="font-size: 11px; color: #92400e; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">CPU per Pod</div>
-                            <div style="font-size: 24px; font-weight: 700; color: #78350f;">${infraDetails.cpu}</div>
+                            <div style="font-size: 20px; font-weight: 700; color: #78350f;">${infraDetails.cpu}</div>
                         </div>
                         ` : ''}
                         ${infraDetails.memory ? `
                         <div style="padding: 12px; background: white; border-radius: 6px; border: 1px solid #fde68a;">
                             <div style="font-size: 11px; color: #92400e; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">Memory per Pod</div>
-                            <div style="font-size: 24px; font-weight: 700; color: #78350f;">${infraDetails.memory}</div>
+                            <div style="font-size: 20px; font-weight: 700; color: #78350f;">${infraDetails.memory}</div>
                         </div>
                         ` : ''}
                     </div>
@@ -886,35 +948,35 @@ function generateEmailBody(template, summary, customBody, infraDetails) {
             ` : ''}
             ${summary && (summary.users > 0 || summary.duration) ? `
             <!-- Test Configuration -->
-            <div class="info-card" style="background: #f0fdf4; border-color: #bbf7d0; margin-bottom: 24px;">
-                <div class="info-card-title" style="color: #065f46; display: flex; align-items: center; gap: 8px;">
+            <div class="info-card" style="background: linear-gradient(135deg, #f0fdf4 0%, #d1fae5 100%); border-color: #34d399; margin-bottom: 28px;">
+                <div class="info-card-title" style="color: #065f46;">
                     <span>⚙️</span>
                     <span>Test Configuration</span>
                 </div>
                 <div class="info-card-content" style="color: #047857;">
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 12px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-top: 16px;">
                         ${summary.users > 0 ? `
-                        <div style="padding: 12px; background: white; border-radius: 6px; border: 1px solid #d1fae5;">
-                            <div style="font-size: 11px; color: #047857; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">Concurrent Users</div>
-                            <div style="font-size: 24px; font-weight: 700; color: #065f46;">${summary.users.toLocaleString()}</div>
+                        <div style="padding: 16px; background: white; border-radius: 10px; border: 2px solid #a7f3d0; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                            <div style="font-size: 11px; color: #047857; font-weight: 700; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">Concurrent Users</div>
+                            <div style="font-size: 20px; font-weight: 700; color: #065f46;">${summary.users.toLocaleString()}</div>
                         </div>
                         ` : ''}
                         ${summary.rampupRate > 0 ? `
-                        <div style="padding: 12px; background: white; border-radius: 6px; border: 1px solid #d1fae5;">
-                            <div style="font-size: 11px; color: #047857; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">Ramp-up Rate</div>
-                            <div style="font-size: 24px; font-weight: 700; color: #065f46;">${summary.rampupRate} <span style="font-size: 14px; color: #059669;">users/sec</span></div>
+                        <div style="padding: 16px; background: white; border-radius: 10px; border: 2px solid #a7f3d0; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                            <div style="font-size: 11px; color: #047857; font-weight: 700; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">Ramp-up Rate</div>
+                            <div style="font-size: 20px; font-weight: 700; color: #065f46;">${summary.rampupRate} <span style="font-size: 13px; color: #059669; font-weight: 600;">users/sec</span></div>
                         </div>
                         ` : ''}
                         ${summary.duration ? `
-                        <div style="padding: 12px; background: white; border-radius: 6px; border: 1px solid #d1fae5;">
-                            <div style="font-size: 11px; color: #047857; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">Test Duration</div>
-                            <div style="font-size: 24px; font-weight: 700; color: #065f46;">${summary.duration}</div>
+                        <div style="padding: 16px; background: white; border-radius: 10px; border: 2px solid #a7f3d0; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                            <div style="font-size: 11px; color: #047857; font-weight: 700; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">Test Duration</div>
+                            <div style="font-size: 20px; font-weight: 700; color: #065f46;">${summary.duration}</div>
                         </div>
                         ` : ''}
                         ${summary.startTime ? `
-                        <div style="padding: 12px; background: white; border-radius: 6px; border: 1px solid #d1fae5;">
-                            <div style="font-size: 11px; color: #047857; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">Test Period</div>
-                            <div style="font-size: 11px; color: #065f46; line-height: 1.6;">
+                        <div style="padding: 16px; background: white; border-radius: 10px; border: 2px solid #a7f3d0; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                            <div style="font-size: 11px; color: #047857; font-weight: 700; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">Test Period</div>
+                            <div style="font-size: 11px; color: #065f46; line-height: 1.6; font-weight: 600;">
                                 <div><strong>Start:</strong> ${summary.startTime}</div>
                                 ${summary.endTime ? `<div><strong>End:</strong> ${summary.endTime}</div>` : ''}
                             </div>
@@ -993,7 +1055,7 @@ function generateEmailBody(template, summary, customBody, infraDetails) {
                                 const avgColor = endpoint.avgTime < 500 ? '#10b981' : endpoint.avgTime < 1000 ? '#f59e0b' : '#ef4444';
                                 const p90Color = endpoint.p90Time < 500 ? '#10b981' : endpoint.p90Time < 1000 ? '#f59e0b' : '#ef4444';
                                 const p95Color = endpoint.p95Time < 500 ? '#10b981' : endpoint.p95Time < 1000 ? '#f59e0b' : '#ef4444';
-                                const methodColor = endpoint.method === 'GET' ? '#cc0066' : endpoint.method === 'POST' ? '#10b981' : '#cc0066';
+                                const methodColor = endpoint.method === 'GET' ? '#3b82f6' : endpoint.method === 'POST' ? '#10b981' : endpoint.method === 'PUT' ? '#f59e0b' : '#ef4444';
                                 
                                 return `
                                 <tr style="border-bottom: 1px solid #f3f4f6; ${idx % 2 === 0 ? 'background: #fafafa;' : ''}">
@@ -1071,17 +1133,17 @@ function generateEmailBody(template, summary, customBody, infraDetails) {
         
         <!-- Footer -->
         <div class="footer">
-            <div style="background: #fef3c7; border: 1px solid #fcd34d; padding: 12px; border-radius: 6px; margin-bottom: 16px;">
-                <div style="color: #92400e; font-size: 13px; font-weight: 600; text-align: center;">
+            <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px solid #fbbf24; padding: 18px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <div style="color: #92400e; font-size: 14px; font-weight: 700; text-align: center; margin-bottom: 6px;">
                     ⚠️ This is an automated email. Please do not reply to this message.
                 </div>
-                <div style="color: #78350f; font-size: 12px; text-align: center; margin-top: 4px;">
+                <div style="color: #78350f; font-size: 13px; text-align: center; font-weight: 500;">
                     For questions or support, please contact your performance engineering team directly.
                 </div>
             </div>
             <div class="footer-brand">⚡ PerformanceAI Toolkit</div>
             <div class="footer-tech">Integrated with Grafana • Prometheus • New Relic • Jenkins</div>
-            <div style="margin-top: 12px; color: #9ca3af;">
+            <div style="margin-top: 16px; color: #64748b; font-size: 13px;">
                 © ${new Date().getFullYear()} Performance Testing Team | All rights reserved
             </div>
         </div>
