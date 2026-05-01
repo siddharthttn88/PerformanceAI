@@ -15,10 +15,10 @@ Three enhanced scripts provide automated data extraction, exact timestamp alignm
 **Usage**:
 ```bash
 # Text output (human-readable)
-node inspect-data-enhanced.js "<PATH_TO_RESULT_HTML>" text
+node src/utils/inspect-data-enhanced.js "<PATH_TO_RESULT_HTML>" text
 
 # JSON output (machine-readable)
-node inspect-data-enhanced.js "<PATH_TO_RESULT_HTML>" json
+node src/utils/inspect-data-enhanced.js "<PATH_TO_RESULT_HTML>" json
 ```
 
 **Enhanced Features**:
@@ -55,13 +55,13 @@ Status 404: 175 failures (0.06%)
 **Usage**:
 ```bash
 # RECOMMENDED: Use exact epoch timestamps
-node get-pod-metrics-enhanced.js <service-name> <START_EPOCH> <END_EPOCH>
+node src/metrics/get-pod-metrics-enhanced.js <service-name> <START_EPOCH> <END_EPOCH>
 
 # Example with exact timestamps
-node get-pod-metrics-enhanced.js subscriber-event-service 1776753979 1776754339
+node src/metrics/get-pod-metrics-enhanced.js subscriber-event-service 1776753979 1776754339
 
 # ALTERNATIVE: Use duration in minutes (legacy)
-node get-pod-metrics-enhanced.js <service-name> <DURATION_IN_MINUTES>
+node src/metrics/get-pod-metrics-enhanced.js <service-name> <DURATION_IN_MINUTES>
 ```
 
 **Enhanced Features**:
@@ -100,13 +100,13 @@ Overall Memory Summary:
 **Usage**:
 ```bash
 # RECOMMENDED: Use exact epoch timestamps with top-N parameter
-node get-apm-metrics-enhanced.js <app-name> <START_EPOCH> <END_EPOCH> [TOP_N]
+node src/metrics/get-apm-metrics-enhanced.js <app-name> <START_EPOCH> <END_EPOCH> [TOP_N]
 
 # Example: Get top 5 transactions using exact timestamps
-node get-apm-metrics-enhanced.js subscriber-event 1776753979 1776754339 5
+node src/metrics/get-apm-metrics-enhanced.js subscriber-event 1776753979 1776754339 5
 
 # ALTERNATIVE: Use duration in minutes
-node get-apm-metrics-enhanced.js <app-name> <DURATION_IN_MINUTES> [TOP_N]
+node src/metrics/get-apm-metrics-enhanced.js <app-name> <DURATION_IN_MINUTES> [TOP_N]
 ```
 
 **Enhanced Features**:
@@ -167,7 +167,7 @@ node get-apm-metrics-enhanced.js <app-name> <DURATION_IN_MINUTES> [TOP_N]
 
 ### Primary Command (Recommended - Enhanced Locust Template)
 ```bash
-node upload-with-Locust_Template.js "<HTML_REPORT_PATH>" "<SPREADSHEET_ID>" --users <USER_COUNT> --rampup "<RAMPUP_TIME>" --targettps <TPS> --comment "<COMMENT_TEXT>" [--timezone <IST|local>]
+node src/reporting/upload-with-Locust_Template.js "<HTML_REPORT_PATH>" "<SPREADSHEET_ID>" --users <USER_COUNT> --rampup "<RAMPUP_TIME>" --targettps <TPS> --comment "<COMMENT_TEXT>" [--timezone <IST|local>]
 ```
 
 **New Features in Locust Template:**
@@ -184,7 +184,7 @@ node upload-with-Locust_Template.js "<HTML_REPORT_PATH>" "<SPREADSHEET_ID>" --us
 
 ### Alternative Command (Legacy Template)
 ```bash
-node upload-with-template.js "<HTML_REPORT_PATH>" "<SPREADSHEET_ID>" --users <USER_COUNT> --rampup "<RAMPUP_TIME>" --comment "<COMMENT_TEXT>"
+node src/reporting/upload-with-template.js "<HTML_REPORT_PATH>" "<SPREADSHEET_ID>" --users <USER_COUNT> --rampup "<RAMPUP_TIME>" --comment "<COMMENT_TEXT>"
 ```
 
 Use the legacy template if you need the original 3-column summary format without merged cells.
@@ -209,7 +209,7 @@ Use the legacy template if you need the original 3-column summary format without
 
 ### Example (Locust Template - Recommended)
 ```bash
-node upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 40000 --rampup "4 minutes" --targettps 680 --timezone "local" --comment "Load Test Analysis - 40K Users Breaking Point Test
+node src/reporting/upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 40000 --rampup "4 minutes" --targettps 680 --timezone "local" --comment "Load Test Analysis - 40K Users Breaking Point Test
 
 Test Configuration:
 - User Load: 40,000 concurrent users
@@ -236,7 +236,7 @@ Recommended maximum: 30K users."
 
 ### Example (Legacy Template)
 ```bash
-node upload-with-template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 80000 --rampup "1 minute" --comment "PayTV API Load Test - 10 endpoints tested\nTotal failures: 250 (0.05%)\nMax response time: 10,282ms"
+node src/reporting/upload-with-template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 80000 --rampup "1 minute" --comment "PayTV API Load Test - 10 endpoints tested\nTotal failures: 250 (0.05%)\nMax response time: 10,282ms"
 ```
 
 ### Parameters
@@ -253,7 +253,7 @@ node upload-with-template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsO
 - `--sheet <name>`: Sheet name (optional, uses first sheet if not specified)
 - `--comment <text>`: Multi-line comment with test details (use `\n` for line breaks)
 - `--timezone <tz>`: Timezone for timestamps - "IST" or "local" (default: local)
-- `--creds <path>`: Credentials file path (default: credentials.json)
+- `--creds <path>`: Credentials file path (default: config/credentials.json)
 
 **Legacy Template (upload-with-template.js):**
 - Same parameters except `--targettps` and `--timezone` are not available
@@ -273,31 +273,31 @@ node upload-with-template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsO
 
 ### Command
 ```bash
-node read-gsheet.js <SPREADSHEET_ID> [options]
+node src/reporting/read-gsheet.js <SPREADSHEET_ID> [options]
 ```
 
 ### Options
 - `--sheet <name>` - Sheet name to read from (default: first sheet)
 - `--range <A1:Z100>` - Cell range to read (default: all data)
-- `--creds <path>` - Path to credentials JSON (default: credentials.json)
+- `--creds <path>` - Path to credentials JSON (default: config/credentials.json)
 - `--format <json|csv>` - Output format (default: json)
 
 ### Examples
 ```bash
 # Read all data from first sheet (JSON format)
-node read-gsheet.js 1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw
+node src/reporting/read-gsheet.js 1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw
 
 # Read specific sheet
-node read-gsheet.js 1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw --sheet "Subscriber_21-04-26"
+node src/reporting/read-gsheet.js 1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw --sheet "Subscriber_21-04-26"
 
 # Read specific range
-node read-gsheet.js 1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw --sheet "Load Test Results" --range "A1:K50"
+node src/reporting/read-gsheet.js 1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw --sheet "Load Test Results" --range "A1:K50"
 
 # Output as CSV
-node read-gsheet.js 1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw --sheet "Subscriber_21-04-26" --format csv
+node src/reporting/read-gsheet.js 1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw --sheet "Subscriber_21-04-26" --format csv
 
 # Use custom credentials file
-node read-gsheet.js 1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw --creds my-creds.json
+node src/reporting/read-gsheet.js 1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw --creds config/my-creds.json
 ```
 
 ### Output Formats
@@ -313,7 +313,7 @@ node read-gsheet.js 1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw --creds my-cred
 - Ready for Excel/spreadsheet import
 
 ### Notes
-- Requires `credentials.json` with Google Sheets API read access
+- Requires `config/credentials.json` with Google Sheets API read access
 - Same credentials used for upload-with-template.js work here
 - Use `--format json` for structured data parsing
 - Use `--format csv` for quick viewing or Excel import
@@ -328,7 +328,7 @@ Send load test reports and analysis via email with HTML formatting and attachmen
 
 ### Command
 ```bash
-node send-email-report.js --to "<EMAIL>" --subject "<SUBJECT>" --report "<PATH_TO_RESULT_HTML>" [options]
+node src/reporting/send-email-report.js --to "<EMAIL>" --subject "<SUBJECT>" --report "<PATH_TO_RESULT_HTML>" [options]
 ```
 
 ### Options
@@ -338,9 +338,9 @@ node send-email-report.js --to "<EMAIL>" --subject "<SUBJECT>" --report "<PATH_T
 - `--report <path>` - Path to HTML report file (required)
 - `--body <text>` - Additional body text/analysis (optional)
 - `--attach <paths>` - Additional attachments (optional, comma-separated paths)
-- `--config <path>` - Config file path (default: config.json)
+- `--config <path>` - Config file path (default: config/config.json)
 - `--template <style>` - Email template: basic|detailed (default: detailed)
-- `--stakeholders-csv <path>` - CSV file with stakeholder emails (default: stakeholder-email.csv)
+- `--stakeholders-csv <path>` - CSV file with stakeholder emails (default: config/stakeholder-email.csv)
 - `--service-name <name>` - Service name being tested (optional)
 - `--pods <number>` - Number of pods running (optional)
 - `--cpu <value>` - CPU per pod, e.g., "3 cores" or "3000m" (optional)
@@ -350,7 +350,7 @@ node send-email-report.js --to "<EMAIL>" --subject "<SUBJECT>" --report "<PATH_T
 
 You can manage recipient emails using a CSV file instead of specifying them on the command line. This is useful for maintaining a consistent distribution list across multiple tests.
 
-**CSV File Format (stakeholder-email.csv):**
+**CSV File Format (config/stakeholder-email.csv):**
 ```csv
 name,email
 Siddharth Sarkhel,siddharth.sarkhel@tothenew.com
@@ -360,7 +360,7 @@ DevOps Lead,devops@example.com
 ```
 
 **Usage:**
-- The script automatically reads `stakeholder-email.csv` from the current directory
+- The script automatically reads `config/stakeholder-email.csv` from the config directory
 - You can specify a different CSV path with `--stakeholders-csv <path>`
 - Emails from CSV are merged with any provided via `--to` flag
 - Duplicates are automatically removed
@@ -369,18 +369,18 @@ DevOps Lead,devops@example.com
 **Example with CSV:**
 ```bash
 # Using default stakeholder-email.csv
-node send-email-report.js \
+node src/reporting/send-email-report.js \
   --subject "Load Test Results" \
   --report "result.html"
 
 # Using custom CSV path
-node send-email-report.js \
-  --stakeholders-csv "team-emails.csv" \
+node src/reporting/send-email-report.js \
+  --stakeholders-csv "config/team-emails.csv" \
   --subject "Load Test Results" \
   --report "result.html"
 
 # Combining CSV with additional recipients
-node send-email-report.js \
+node src/reporting/send-email-report.js \
   --to "urgent-alert@example.com" \
   --subject "Critical: Breaking Point Test" \
   --report "result.html"
@@ -423,7 +423,7 @@ node send-email-report.js \
 
 #### Basic Email with Report
 ```bash
-node send-email-report.js \
+node src/reporting/send-email-report.js \
   --to "team@example.com" \
   --subject "Load Test Results - 5000 Users" \
   --report "D:\PerformanceAI\Reports\result.html"
@@ -431,7 +431,7 @@ node send-email-report.js \
 
 #### Email with CC and Analysis
 ```bash
-node send-email-report.js \
+node src/reporting/send-email-report.js \
   --to "manager@example.com" \
   --cc "dev@example.com,qa@example.com" \
   --subject "Breaking Point Test - subscriber-event-service" \
@@ -471,7 +471,7 @@ Next Steps:
 
 #### Email with Multiple Attachments
 ```bash
-node send-email-report.js \
+node src/reporting/send-email-report.js \
   --to "team@example.com" \
   --subject "Load Test - Complete Results Package" \
   --report "D:\PerformanceAI\Reports\result.html" \
@@ -488,7 +488,7 @@ Test passed all SLA criteria. Ready for production."
 
 #### Email with Infrastructure Details
 ```bash
-node send-email-report.js \
+node src/reporting/send-email-report.js \
   --to "team@example.com" \
   --subject "Load Test Results - Search Proxy Service" \
   --report "D:\PerformanceAI\Reports\result.html" \
@@ -508,7 +508,7 @@ Test Result: System handled 20K users successfully with <1% error rate."
 
 #### Basic Template Email
 ```bash
-node send-email-report.js \
+node src/reporting/send-email-report.js \
   --to "stakeholder@example.com" \
   --subject "Quick Test Results - API Gateway" \
   --report "D:\PerformanceAI\Reports\result.html" \
@@ -525,7 +525,7 @@ node send-email-report.js \
 npm install nodemailer
 ```
 
-2. Add email configuration to `config.json`:
+2. Add email configuration to `config/config.json`:
 ```json
 {
   "email": {
@@ -546,7 +546,7 @@ npm install nodemailer
    - Go to https://myaccount.google.com/apppasswords
    - Select "Mail" and device "Other"
    - Copy the 16-character password
-   - Use this in config.json (not your regular Gmail password)
+   - Use this in config/config.json (not your regular Gmail password)
 
 4. For Other Email Services:
    - **Outlook/Office365:**
@@ -642,7 +642,7 @@ After **Step 5: Upload to Google Sheet**, add:
 
 **Step 6: Send Email Report**
 ```bash
-node send-email-report.js \
+node src/reporting/send-email-report.js \
   --to "performance-team@example.com" \
   --cc "dev-managers@example.com" \
   --subject "Load Test Results - <SERVICE_NAME> - <USER_COUNT> Users" \
@@ -653,13 +653,13 @@ node send-email-report.js \
 **Example Integrated Workflow:**
 ```bash
 # Step 5: Upload to Google Sheet
-node upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" \
+node src/reporting/upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" \
   "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" \
   --users 5000 --rampup "1 minute" --targettps 83 \
   --comment "Test completed successfully..."
 
 # Step 6: Send Email Report
-node send-email-report.js \
+node src/reporting/send-email-report.js \
   --to "team@example.com" \
   --cc "manager@example.com" \
   --subject "Load Test Results - subscriber-event-service - 5000 Users" \
@@ -683,9 +683,9 @@ Next Steps: Proceed to 10K user test."
 ```
 
 ### Notes
-- Email configuration must be added to `config.json` before first use
+- Email configuration must be added to `config/config.json` before first use
 - For Gmail, use App Password (not regular password)
-- SMTP credentials are stored securely in config.json (excluded from git)
+- SMTP credentials are stored securely in config/config.json (excluded from git)
 - Failed authentication shows helpful error messages
 - Supports both Gmail, Outlook, and custom SMTP servers
 - Attachments are automatically linked to email
@@ -696,7 +696,7 @@ Next Steps: Proceed to 10K user test."
 
 **Authentication Failed:**
 - Check if using App Password (Gmail)
-- Verify email and password in config.json
+- Verify email and password in config/config.json
 - Enable "Less secure apps" if using older auth
 
 **Email Not Received:**
@@ -738,17 +738,17 @@ Use the `--jenkins=<instance>` flag to specify which Jenkins instance to use:
 
 ```bash
 # Default (jenkins-local)
-node jenkins-client.js list
+node src/clients/jenkins-client.js list
 
 # Explicitly specify jenkins-local
-node jenkins-client.js --jenkins=jenkins-local list
+node src/clients/jenkins-client.js --jenkins=jenkins-local list
 
 # Use jenkins-locust for EC2 provisioning
-node jenkins-client.js --jenkins=jenkins-locust list
-node jenkins-client.js --jenkins=jenkins-locust build load-test-locust-asg MIN_SIZE=31 MAX_SIZE=31 DESIRED_CAPACITY=31
+node src/clients/jenkins-client.js --jenkins=jenkins-locust list
+node src/clients/jenkins-client.js --jenkins=jenkins-locust build load-test-locust-asg MIN_SIZE=31 MAX_SIZE=31 DESIRED_CAPACITY=31
 
 # Get build status from jenkins-locust
-node jenkins-client.js --jenkins=jenkins-locust status load-test-locust-asg 156
+node src/clients/jenkins-client.js --jenkins=jenkins-locust status load-test-locust-asg 156
 ```
 
 **Configuration:**
@@ -782,14 +782,14 @@ Each Jenkins instance is configured in `config.json` under `mcpServers.jenkins-l
 **Usage**:
 ```bash
 # Using jenkins-local configuration (default)
-node jenkins-client.js build "Locust - Test Runner" Master_IP=10.16.7.202 Users=10 RampUp=0.66 Duration=3m
+node src/clients/jenkins-client.js build "Locust - Test Runner" Master_IP=10.16.7.202 Users=10 RampUp=0.66 Duration=3m
 # Note: RampUp is the user ramp rate (users/second) - use system-specific calculation
 
 # Explicitly specify jenkins-local
-node jenkins-client.js --jenkins=jenkins-local build "Locust - Test Runner" Master_IP=10.16.7.202 Users=1000 RampUp=16.67 Duration=3m
+node src/clients/jenkins-client.js --jenkins=jenkins-local build "Locust - Test Runner" Master_IP=10.16.7.202 Users=1000 RampUp=16.67 Duration=3m
 
 # Check build status
-node jenkins-client.js status "Locust - Test Runner" <BUILD_NUMBER>
+node src/clients/jenkins-client.js status "Locust - Test Runner" <BUILD_NUMBER>
 ```
 
 ---
@@ -811,13 +811,13 @@ node jenkins-client.js status "Locust - Test Runner" <BUILD_NUMBER>
 **Usage**:
 ```bash
 # Using jenkins-local configuration (default)
-node jenkins-client.js build "Locust Code n Data Copy" Master_IP=10.16.7.202
+node src/clients/jenkins-client.js build "Locust Code n Data Copy" Master_IP=10.16.7.202
 
 # Explicitly specify jenkins-local
-node jenkins-client.js --jenkins=jenkins-local build "Locust Code n Data Copy" Master_IP=10.16.7.202
+node src/clients/jenkins-client.js --jenkins=jenkins-local build "Locust Code n Data Copy" Master_IP=10.16.7.202
 
 # Check build status
-node jenkins-client.js status "Locust Code n Data Copy" <BUILD_NUMBER>
+node src/clients/jenkins-client.js status "Locust Code n Data Copy" <BUILD_NUMBER>
 ```
 
 ---
@@ -847,17 +847,17 @@ node jenkins-client.js status "Locust Code n Data Copy" <BUILD_NUMBER>
 **Usage**:
 ```bash
 # List jobs on jenkins-locust
-node jenkins-client.js --jenkins=jenkins-locust list
+node src/clients/jenkins-client.js --jenkins=jenkins-locust list
 
 # Provision 31 EC2 servers (1 master + 30 workers)
-node jenkins-client.js --jenkins=jenkins-locust build load-test-locust-asg \
+node src/clients/jenkins-client.js --jenkins=jenkins-locust build load-test-locust-asg \
   MIN_SIZE=31 MAX_SIZE=31 DESIRED_CAPACITY=31
 
 # Check provisioning status
-node jenkins-client.js --jenkins=jenkins-locust status load-test-locust-asg <BUILD_NUMBER>
+node src/clients/jenkins-client.js --jenkins=jenkins-locust status load-test-locust-asg <BUILD_NUMBER>
 
 # Get console output to see server IPs
-node jenkins-client.js --jenkins=jenkins-locust console load-test-locust-asg <BUILD_NUMBER>
+node src/clients/jenkins-client.js --jenkins=jenkins-locust console load-test-locust-asg <BUILD_NUMBER>
 ```
 
 **Output**:
@@ -868,7 +868,7 @@ node jenkins-client.js --jenkins=jenkins-locust console load-test-locust-asg <BU
 **Common Workflow**:
 1. Use jenkins-locust to provision EC2 instances (Locust master + workers)
 ```bash
-node jenkins-client.js --jenkins=jenkins-locust build load-test-locust-asg MIN_SIZE=31 MAX_SIZE=31 DESIRED_CAPACITY=31
+node src/clients/jenkins-client.js --jenkins=jenkins-locust build load-test-locust-asg MIN_SIZE=31 MAX_SIZE=31 DESIRED_CAPACITY=31
 ```
 
 2. Get the Master IP from provisioning output and save to masterIP.txt
@@ -886,18 +886,18 @@ echo "10.16.7.202" > masterIP.txt
 
 4. Copy Locust code and data to servers
 ```bash
-node jenkins-client.js --jenkins=jenkins-local build "Locust Code n Data Copy" Master_IP=10.16.7.202
+node src/clients/jenkins-client.js --jenkins=jenkins-local build "Locust Code n Data Copy" Master_IP=10.16.7.202
 ```
 
 5. Run load test
 ```bash
-node jenkins-client.js --jenkins=jenkins-local build "Locust - Test Runner" \
+node src/clients/jenkins-client.js --jenkins=jenkins-local build "Locust - Test Runner" \
   Master_IP=10.16.7.202 Users=1000 RampUp=16.67 Duration=3m
 ```
 
 6. After testing, terminate EC2 instances (use appropriate jenkins-locust job)
 ```bash
-node jenkins-client.js --jenkins=jenkins-locust build load-test-infra-start-stop-job ACTION=stop
+node src/clients/jenkins-client.js --jenkins=jenkins-locust build load-test-infra-start-stop-job ACTION=stop
 ```
 
 ---
@@ -912,11 +912,11 @@ End-to-end workflow for running load tests, collecting infrastructure metrics, a
 #### Step 1: Run Load Test via Jenkins
 ```bash
 # Trigger Locust test with desired parameters
-node jenkins-client.js build "Locust - Test Runner" Master_IP=10.16.7.202 Users=<USER_COUNT> RampUp=<RAMP_RATE> Duration=<DURATION>
+node src/clients/jenkins-client.js build "Locust - Test Runner" Master_IP=10.16.7.202 Users=<USER_COUNT> RampUp=<RAMP_RATE> Duration=<DURATION>
 # Note: RampUp is the user ramp rate in users/second (use system-specific calculation)
 
 # Monitor build status
-node jenkins-client.js status "Locust - Test Runner" <BUILD_NUMBER>
+node src/clients/jenkins-client.js status "Locust - Test Runner" <BUILD_NUMBER>
 ```
 
 #### Step 2: Fetch Test Report
@@ -932,7 +932,7 @@ node jenkins-client.js status "Locust - Test Runner" <BUILD_NUMBER>
 **Extract Test Metadata & Exact Timestamps (ENHANCED):**
 ```bash
 # Extract comprehensive test metadata using enhanced script
-node inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" text
+node src/utils/inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" text
 # Output includes:
 # - Exact timestamps: startEpoch, endEpoch, bufferEndEpoch (end + 60s)
 # - Test duration with buffer
@@ -941,7 +941,7 @@ node inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" text
 # - Top 5 highest error rate endpoints
 
 # For JSON output (machine-readable):
-node inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" json
+node src/utils/inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" json
 
 # Wait 1 minute after test completion for metrics to stabilize
 Start-Sleep -Seconds 60
@@ -950,16 +950,16 @@ Start-Sleep -Seconds 60
 **Fetch from Grafana (Kubernetes Metrics) - ENHANCED with AVG/MAX:**
 ```bash
 # RECOMMENDED: Use exact epoch timestamps from inspect-data-enhanced.js
-node get-pod-metrics-enhanced.js <service-name> <START_EPOCH> <END_EPOCH>
+node src/metrics/get-pod-metrics-enhanced.js <service-name> <START_EPOCH> <END_EPOCH>
 
 # Example: Using exact timestamps from test
-node get-pod-metrics-enhanced.js subscriber-event-service 1776753979 1776754339
+node src/metrics/get-pod-metrics-enhanced.js subscriber-event-service 1776753979 1776754339
 
 # ALTERNATIVE: Use duration in minutes (legacy compatibility)
-node get-pod-metrics-enhanced.js <service-name> <DURATION_IN_MINUTES>
+node src/metrics/get-pod-metrics-enhanced.js <service-name> <DURATION_IN_MINUTES>
 
 # Example: For a 3-minute test
-node get-pod-metrics-enhanced.js subscriber-event-service 3
+node src/metrics/get-pod-metrics-enhanced.js subscriber-event-service 3
 ```
 
 **New Features:**
@@ -977,16 +977,16 @@ node get-pod-metrics-enhanced.js subscriber-event-service 3
 **Fetch from New Relic (APM Metrics) - ENHANCED with Transaction Sorting:**
 ```bash
 # RECOMMENDED: Use exact epoch timestamps from inspect-data-enhanced.js
-node get-apm-metrics-enhanced.js <application-name> <START_EPOCH> <END_EPOCH> [TOP_N]
+node src/metrics/get-apm-metrics-enhanced.js <application-name> <START_EPOCH> <END_EPOCH> [TOP_N]
 
 # Example: Using exact timestamps, get top 5 transactions
-node get-apm-metrics-enhanced.js subscriber-event 1776753979 1776754339 5
+node src/metrics/get-apm-metrics-enhanced.js subscriber-event 1776753979 1776754339 5
 
 # ALTERNATIVE: Use duration in minutes (legacy compatibility)
-node get-apm-metrics-enhanced.js <application-name> <DURATION_IN_MINUTES> [TOP_N]
+node src/metrics/get-apm-metrics-enhanced.js <application-name> <DURATION_IN_MINUTES> [TOP_N]
 
 # Example: For a 3-minute test, get top 10 transactions
-node get-apm-metrics-enhanced.js subscriber-event 3 10
+node src/metrics/get-apm-metrics-enhanced.js subscriber-event 3 10
 ```
 
 **New Features:**
@@ -1066,7 +1066,7 @@ Root Cause Analysis:
 
 #### Step 5: Upload to Google Sheet
 ```bash
-node upload-with-Locust_Template.js "<HTML_REPORT_PATH>" "<SPREADSHEET_ID>" --users <USER_COUNT> --rampup "<RAMPUP_TIME>" --targettps <TPS> --comment "<COMMENT_TEXT_WITH_INFRA_METRICS>"
+node src/reporting/upload-with-Locust_Template.js "<HTML_REPORT_PATH>" "<SPREADSHEET_ID>" --users <USER_COUNT> --rampup "<RAMPUP_TIME>" --targettps <TPS> --comment "<COMMENT_TEXT_WITH_INFRA_METRICS>"
 ```
 
 **Note**: Use `upload-with-template.js` (legacy) if you prefer the original 3-column format without merged cells.
@@ -1074,14 +1074,14 @@ node upload-with-Locust_Template.js "<HTML_REPORT_PATH>" "<SPREADSHEET_ID>" --us
 ### Example Complete Workflow (Using Enhanced Scripts)
 ```bash
 # 1. Run test
-node jenkins-client.js build "Locust - Test Runner" Master_IP=10.16.7.202 Users=5000 RampUp=84 Duration=5m
+node src/clients/jenkins-client.js build "Locust - Test Runner" Master_IP=10.16.7.202 Users=5000 RampUp=84 Duration=5m
 
 # 2. Wait for completion and fetch report
-node jenkins-client.js wait "Locust - Test Runner" 427
+node src/clients/jenkins-client.js wait "Locust - Test Runner" 427
 # Report location: D:\PerformanceAI\Reports\result.html
 
 # Extract test metadata with EXACT TIMESTAMPS (ENHANCED)
-node inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" text
+node src/utils/inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" text
 # Output:
 # - Start Time: 2026-04-21T06:46:19Z (Epoch: 1776753979)
 # - End Time: 2026-04-21T06:51:19Z (Epoch: 1776754279)
@@ -1095,7 +1095,7 @@ node inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" text
 Start-Sleep -Seconds 60
 
 # 3. Fetch infrastructure metrics with EXACT TIMESTAMPS and AVG/MAX (ENHANCED)
-node get-pod-metrics-enhanced.js subscriber-event-service 1776753979 1776754339
+node src/metrics/get-pod-metrics-enhanced.js subscriber-event-service 1776753979 1776754339
 # Output: 
 # - 10 pods running
 # - CPU: 29.7% avg, 100.1% max  ← Shows BOTH values (solves 76% vs 99% issue)
@@ -1103,7 +1103,7 @@ node get-pod-metrics-enhanced.js subscriber-event-service 1776753979 1776754339
 # - No restarts
 
 # Fetch APM metrics with EXACT TIMESTAMPS and TOP 5 SORTING (ENHANCED)
-node get-apm-metrics-enhanced.js subscriber-event 1776753979 1776754339 5
+node src/metrics/get-apm-metrics-enhanced.js subscriber-event 1776753979 1776754339 5
 # Output:
 # - Total Requests: 107,102
 # - Top 5 Slowest: v3/favourites (5,425ms), continue-watch (2,363ms)...
@@ -1117,7 +1117,7 @@ node get-apm-metrics-enhanced.js subscriber-event 1776753979 1776754339 5
 # - Compare all three sources to identify bottlenecks
 
 # 5. Upload results with comprehensive analysis (using auto-extracted data)
-node upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 5000 --rampup "1 minute" --targettps 83 --comment "Subscriber Event Service Load Test
+node src/reporting/upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 5000 --rampup "1 minute" --targettps 83 --comment "Subscriber Event Service Load Test
 
 Infrastructure (Kubernetes):
 - Pods: 20 (all running, no restarts)
@@ -1226,17 +1226,17 @@ For each iteration, follow the **Complete Load Testing Workflow** (Section 4):
 ##### 2.1 Run Load Test via Jenkins
 ```bash
 # Trigger Locust test
-node jenkins-client.js build "Locust - Test Runner" Master_IP=<MASTER_IP> Users=<USER_COUNT> RampUp=<RATE> Duration=<DURATION>
+node src/clients/jenkins-client.js build "Locust - Test Runner" Master_IP=<MASTER_IP> Users=<USER_COUNT> RampUp=<RATE> Duration=<DURATION>
 
 # Wait for test completion
-node jenkins-client.js wait "Locust - Test Runner" <BUILD_NUMBER>
+node src/clients/jenkins-client.js wait "Locust - Test Runner" <BUILD_NUMBER>
 ```
 
 ##### 2.2 Fetch Test Report
 ```bash
 # Report automatically saved to: D:\PerformanceAI\Reports\result.html
 # Extract test metadata with EXACT TIMESTAMPS (ENHANCED)
-node inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" text
+node src/utils/inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" text
 # Output:
 # - Start/End/Buffer timestamps (ISO and Epoch formats)
 # - Duration with 60s buffer
@@ -1252,7 +1252,7 @@ Start-Sleep -Seconds 60
 ```bash
 # Fetch pod metrics with EXACT TIMESTAMPS and AVG/MAX (ENHANCED)
 # Use startEpoch and bufferEndEpoch from inspect-data-enhanced.js output
-node get-pod-metrics-enhanced.js <SERVICE_NAME> <START_EPOCH> <BUFFER_END_EPOCH>
+node src/metrics/get-pod-metrics-enhanced.js <SERVICE_NAME> <START_EPOCH> <BUFFER_END_EPOCH>
 # Returns:
 # - Pod count and status
 # - CPU: AVG % and MAX % (e.g., 29.7% avg, 100.1% max)
@@ -1262,7 +1262,7 @@ node get-pod-metrics-enhanced.js <SERVICE_NAME> <START_EPOCH> <BUFFER_END_EPOCH>
 
 # Fetch APM metrics with EXACT TIMESTAMPS and TOP N SORTING (ENHANCED)
 # Use startEpoch and bufferEndEpoch from inspect-data-enhanced.js output
-node get-apm-metrics-enhanced.js <APPLICATION_NAME> <START_EPOCH> <BUFFER_END_EPOCH> [TOP_N]
+node src/metrics/get-apm-metrics-enhanced.js <APPLICATION_NAME> <START_EPOCH> <BUFFER_END_EPOCH> [TOP_N]
 # Returns:
 # - Top N Slowest: Sorted by avg_duration (descending)
 # - Top N Highest Error Rate: Sorted by error_rate (descending)
@@ -1495,7 +1495,7 @@ Recommendations:
 
 ##### 2.6 Upload Results to Google Sheet
 ```bash
-node upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "<SPREADSHEET_ID>" --users <USER_COUNT> --rampup "<RAMPUP_TIME>" --targettps <TPS> --comment "<PREPARED_COMMENT>"
+node src/reporting/upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "<SPREADSHEET_ID>" --users <USER_COUNT> --rampup "<RAMPUP_TIME>" --targettps <TPS> --comment "<PREPARED_COMMENT>"
 ```
 
 **Legacy Option**: Use `upload-with-template.js` for the original format without merged comment cells.
@@ -1526,11 +1526,11 @@ Continue executing **Step 2** (Complete Load Test Flow) for each planned iterati
 
 ```bash
 # Step 1: Run test
-node jenkins-client.js build "Locust - Test Runner" Master_IP=10.16.7.34 Users=1000 RampUp=17 Duration=3m
-node jenkins-client.js wait "Locust - Test Runner" 426
+node src/clients/jenkins-client.js build "Locust - Test Runner" Master_IP=10.16.7.34 Users=1000 RampUp=17 Duration=3m
+node src/clients/jenkins-client.js wait "Locust - Test Runner" 426
 
 # Step 2: Fetch report and extract metadata (ENHANCED)
-node inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" text
+node src/utils/inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" text
 # Output: 
 # - Start: 1776753000, End: 1776753180, Buffer: 1776753240
 # - Duration: 180s (240s with buffer)
@@ -1544,10 +1544,10 @@ node inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" text
 Start-Sleep -Seconds 60
 
 # Step 3: Collect metrics with EXACT TIMESTAMPS (ENHANCED)
-node get-pod-metrics-enhanced.js subscriber-event-service 1776753000 1776753240
+node src/metrics/get-pod-metrics-enhanced.js subscriber-event-service 1776753000 1776753240
 # Output: 20 pods, CPU: 15% avg / 18% max, Memory: 45% avg / 48% max, No restarts
 
-node get-apm-metrics-enhanced.js subscriber-event 1776753000 1776753240 5
+node src/metrics/get-apm-metrics-enhanced.js subscriber-event 1776753000 1776753240 5
 # Output: Response time: 250ms avg, Throughput: 5000 rpm, Error rate: 0%
 # - Top 5 Slowest: /api/get-profile (280ms), /api/get-history (240ms), /api/post-event (220ms)...
 # - Top 5 Highest Error Rate: All 0%
@@ -1561,7 +1561,7 @@ node get-apm-metrics-enhanced.js subscriber-event 1776753000 1776753240 5
 # Decision: CONTINUE
 
 # Step 5: Upload results (using auto-extracted enhanced data)
-node upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 1000 --rampup "60 seconds" --targettps 17 --comment "✅ Breaking Point Test - Iteration 1`nService: subscriber-event-service`nLoad: 1,000 users`n`nInfrastructure:`n- Pods: 20`n- CPU: 15% avg, 18% max  ← ENHANCED: Both values`n- Memory: 45% avg, 48% max  ← ENHANCED: Both values`n`nTest Results:`n- Total requests: 15,000`n- Total failures: 0 (0%)`n- Avg response time: 250ms`n- P95: 320ms`n`nTop 3 Slowest Endpoints:`n1. GET /api/get-profile: 280ms avg (0% error, 5,000 requests)`n2. GET /api/get-history: 240ms avg (0% error, 4,000 requests)`n3. POST /api/post-event: 220ms avg (0% error, 6,000 requests)`n`nStatus: ✅ PASS - All criteria met`nNext: Continue to iteration 2"
+node src/reporting/upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 1000 --rampup "60 seconds" --targettps 17 --comment "✅ Breaking Point Test - Iteration 1`nService: subscriber-event-service`nLoad: 1,000 users`n`nInfrastructure:`n- Pods: 20`n- CPU: 15% avg, 18% max  ← ENHANCED: Both values`n- Memory: 45% avg, 48% max  ← ENHANCED: Both values`n`nTest Results:`n- Total requests: 15,000`n- Total failures: 0 (0%)`n- Avg response time: 250ms`n- P95: 320ms`n`nTop 3 Slowest Endpoints:`n1. GET /api/get-profile: 280ms avg (0% error, 5,000 requests)`n2. GET /api/get-history: 240ms avg (0% error, 4,000 requests)`n3. POST /api/post-event: 220ms avg (0% error, 6,000 requests)`n`nStatus: ✅ PASS - All criteria met`nNext: Continue to iteration 2"
 
 # Wait 3 minutes for cooldown
 Start-Sleep -Seconds 180
@@ -1571,11 +1571,11 @@ Start-Sleep -Seconds 180
 
 ```bash
 # Step 1: Run test
-node jenkins-client.js build "Locust - Test Runner" Master_IP=10.16.7.34 Users=5000 RampUp=84 Duration=3m
-node jenkins-client.js wait "Locust - Test Runner" 427
+node src/clients/jenkins-client.js build "Locust - Test Runner" Master_IP=10.16.7.34 Users=5000 RampUp=84 Duration=3m
+node src/clients/jenkins-client.js wait "Locust - Test Runner" 427
 
 # Step 2: Fetch report and extract metadata (ENHANCED)
-node inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" text
+node src/utils/inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" text
 # Output:
 # - Start: 1776754000, End: 1776754180, Buffer: 1776754240
 # - Duration: 180s (240s with buffer)
@@ -1589,10 +1589,10 @@ node inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" text
 Start-Sleep -Seconds 60
 
 # Step 3: Collect metrics with EXACT TIMESTAMPS (ENHANCED)
-node get-pod-metrics-enhanced.js subscriber-event-service 1776754000 1776754240
+node src/metrics/get-pod-metrics-enhanced.js subscriber-event-service 1776754000 1776754240
 # Output: 20 pods, CPU: 35% avg / 42% max, Memory: 60% avg / 68% max, No restarts
 
-node get-apm-metrics-enhanced.js subscriber-event 1776754000 1776754240 5
+node src/metrics/get-apm-metrics-enhanced.js subscriber-event 1776754000 1776754240 5
 # Output: Response time: 450ms avg, Throughput: 25000 rpm, Error rate: 0.16%
 # - Top 5 Slowest: /api/get-history (820ms), /api/search-content (650ms), /api/get-recommendations (580ms)...
 # - Top 5 Highest Error Rate: /api/get-history (5.3%), /api/search-content (2.1%)...
@@ -1606,7 +1606,7 @@ node get-apm-metrics-enhanced.js subscriber-event 1776754000 1776754240 5
 # Decision: CONTINUE
 
 # Step 5: Upload results (using auto-extracted enhanced data)
-node upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 5000 --rampup "60 seconds" --targettps 84 --comment "✅ Breaking Point Test - Iteration 2`nService: subscriber-event-service`nLoad: 5,000 users`n`nInfrastructure:`n- Pods: 20`n- CPU: 35% avg, 42% max  ← ENHANCED: Both values`n- Memory: 60% avg, 68% max  ← ENHANCED: Both values`n`nTest Results:`n- Total requests: 75,000`n- Total failures: 120 (0.16%)`n- Avg response time: 450ms`n- P95: 670ms`n`nTop 3 Slowest Endpoints:`n1. GET /api/get-history: 820ms avg (5.3% error, 15,000 requests)`n2. GET /api/search-content: 650ms avg (2.1% error, 12,000 requests)`n3. GET /api/get-recommendations: 580ms avg (1.5% error, 10,000 requests)`n`nTop 3 Highest Error Rate:`n1. GET /api/get-history: 5.3% error (820ms avg, 15,000 requests)`n2. GET /api/search-content: 2.1% error (650ms avg, 12,000 requests)`n3. GET /api/get-recommendations: 1.5% error (580ms avg, 10,000 requests)`n`nFailure Status Codes:`n- 504 Gateway Timeout: 80 (66.7%)  ← Primary issue`n- 500 Internal Server Error: 25 (20.8%)`n- 503 Service Unavailable: 15 (12.5%)`n`nStatus: ✅ PASS - All criteria met`nNext: Continue to iteration 3"
+node src/reporting/upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 5000 --rampup "60 seconds" --targettps 84 --comment "✅ Breaking Point Test - Iteration 2`nService: subscriber-event-service`nLoad: 5,000 users`n`nInfrastructure:`n- Pods: 20`n- CPU: 35% avg, 42% max  ← ENHANCED: Both values`n- Memory: 60% avg, 68% max  ← ENHANCED: Both values`n`nTest Results:`n- Total requests: 75,000`n- Total failures: 120 (0.16%)`n- Avg response time: 450ms`n- P95: 670ms`n`nTop 3 Slowest Endpoints:`n1. GET /api/get-history: 820ms avg (5.3% error, 15,000 requests)`n2. GET /api/search-content: 650ms avg (2.1% error, 12,000 requests)`n3. GET /api/get-recommendations: 580ms avg (1.5% error, 10,000 requests)`n`nTop 3 Highest Error Rate:`n1. GET /api/get-history: 5.3% error (820ms avg, 15,000 requests)`n2. GET /api/search-content: 2.1% error (650ms avg, 12,000 requests)`n3. GET /api/get-recommendations: 1.5% error (580ms avg, 10,000 requests)`n`nFailure Status Codes:`n- 504 Gateway Timeout: 80 (66.7%)  ← Primary issue`n- 500 Internal Server Error: 25 (20.8%)`n- 503 Service Unavailable: 15 (12.5%)`n`nStatus: ✅ PASS - All criteria met`nNext: Continue to iteration 3"
 
 # Wait 3 minutes for cooldown
 Start-Sleep -Seconds 180
@@ -1616,11 +1616,11 @@ Start-Sleep -Seconds 180
 
 ```bash
 # Step 1: Run test
-node jenkins-client.js build "Locust - Test Runner" Master_IP=10.16.7.34 Users=10000 RampUp=167 Duration=3m
-node jenkins-client.js wait "Locust - Test Runner" 428
+node src/clients/jenkins-client.js build "Locust - Test Runner" Master_IP=10.16.7.34 Users=10000 RampUp=167 Duration=3m
+node src/clients/jenkins-client.js wait "Locust - Test Runner" 428
 
 # Step 2: Fetch report and extract metadata (ENHANCED)
-node inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" text
+node src/utils/inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" text
 # Output:
 # - Start: 1776755000, End: 1776755180, Buffer: 1776755240
 # - Duration: 180s (240s with buffer)
@@ -1634,10 +1634,10 @@ node inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" text
 Start-Sleep -Seconds 60
 
 # Step 3: Collect metrics with EXACT TIMESTAMPS (ENHANCED)
-node get-pod-metrics-enhanced.js subscriber-event-service 1776755000 1776755240
+node src/metrics/get-pod-metrics-enhanced.js subscriber-event-service 1776755000 1776755240
 # Output: 20 pods, CPU: 75% avg / 82% max, Memory: 76% avg / 84% max, No restarts
 
-node get-apm-metrics-enhanced.js subscriber-event 1776755000 1776755240 5
+node src/metrics/get-apm-metrics-enhanced.js subscriber-event 1776755000 1776755240 5
 # Output: Response time: 1250ms avg, Throughput: 48000 rpm, Error rate: 1.67%
 # - Top 5 Slowest: /api/get-history (1850ms), /api/search-content (1450ms), /api/get-recommendations (1150ms)...
 # - Top 5 Highest Error Rate: /api/get-history (8.0%), /api/search-content (6.7%)...
@@ -1651,7 +1651,7 @@ node get-apm-metrics-enhanced.js subscriber-event 1776755000 1776755240 5
 # Decision: BREAKING POINT REACHED - STOP
 
 # Step 5: Upload final breaking point report (using auto-extracted enhanced data)
-node upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 10000 --rampup "60 seconds" --targettps 167 --comment "🔴 BREAKING POINT TEST - Final Iteration 3`n`nService: subscriber-event-service`nLoad: 10,000 users`n`nBreaking Point Summary:`n- Maximum Stable Load: 5,000 users`n- Breaking Point Load: 10,000 users`n- Criteria Met:`n  * Response Time: 1250ms (Threshold: 1000ms) 🔴`n  * MAX Memory: 84% (Threshold: 80%) 🔴`n`nInfrastructure at Breaking Point:`n- Pods: 20`n- CPU: 75% avg, 82% max  ← ENHANCED: Both values (approaching limit)`n- Memory: 76% avg, 84% max  ← ENHANCED: Both values (exceeds threshold)`n`nTop 5 Slowest Endpoints:`n1. GET /api/get-history: 1850ms avg (8.0% error, 1200 failures)`n2. GET /api/search-content: 1450ms avg (6.7% error, 800 failures)`n3. GET /api/get-recommendations: 1150ms avg (5.0% error, 500 failures)`n4. GET /api/user-profile: 950ms avg (0.5% error, 50 failures)`n5. POST /api/post-event: 850ms avg (0.2% error, 20 failures)`n`nTop 5 Highest Error Rate:`n1. GET /api/get-history: 8.0% error (1850ms avg, 15,000 requests)`n2. GET /api/search-content: 6.7% error (1450ms avg, 12,000 requests)`n3. GET /api/get-recommendations: 5.0% error (1150ms avg, 10,000 requests)`n4. GET /api/user-profile: 0.5% error (950ms avg, 18,000 requests)`n5. POST /api/post-event: 0.2% error (850ms avg, 20,000 requests)`n`nFailure Status Codes:`n- 504 Gateway Timeout: 1800 (72%)  ← Backend database saturation`n- 503 Service Unavailable: 500 (20%)  ← Service overload`n- 500 Internal Server Error: 200 (8%)`n`nTest Progression:`n- Iteration 1: 1,000 users - ✅ PASS (250ms, 0% error, CPU 15%/18% avg/max, Mem 45%/48% avg/max)`n- Iteration 2: 5,000 users - ✅ PASS (450ms, 0.16% error, CPU 35%/42% avg/max, Mem 60%/68% avg/max)`n- Iteration 3: 10,000 users - 🔴 FAIL (1250ms, 1.67% error, CPU 75%/82% avg/max, Mem 76%/84% avg/max)`n`nRoot Cause Analysis:`n- Primary Bottleneck: Database I/O (backend timeout)`n- Evidence:`n  * CPU/Memory healthy on avg (75%/76%) but MAX hits limit (82%/84%)`n  * 504 timeouts (72%) indicate backend database saturation`n  * Slowest endpoints all DB-heavy operations (get-history: 1850ms)`n  * Response times degrade exponentially (not linearly)`n`nRecommendations:`n- Maximum safe load: 8,000 users (80% of breaking point)`n- Bottleneck Endpoint: /api/get-history (1850ms avg, 8% error) - optimize first`n- High Error Endpoint: /api/get-history (8.0% error) - fix database queries`n- Failure Root Cause: 504 Gateway Timeout (72%) indicates backend database I/O bottleneck`n- Infrastructure: MAX Memory 84% suggests increase to 6GB per pod OR scale to 30 pods`n- Application: Add database indexes on history table, implement query caching, add connection pooling"
+node src/reporting/upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 10000 --rampup "60 seconds" --targettps 167 --comment "🔴 BREAKING POINT TEST - Final Iteration 3`n`nService: subscriber-event-service`nLoad: 10,000 users`n`nBreaking Point Summary:`n- Maximum Stable Load: 5,000 users`n- Breaking Point Load: 10,000 users`n- Criteria Met:`n  * Response Time: 1250ms (Threshold: 1000ms) 🔴`n  * MAX Memory: 84% (Threshold: 80%) 🔴`n`nInfrastructure at Breaking Point:`n- Pods: 20`n- CPU: 75% avg, 82% max  ← ENHANCED: Both values (approaching limit)`n- Memory: 76% avg, 84% max  ← ENHANCED: Both values (exceeds threshold)`n`nTop 5 Slowest Endpoints:`n1. GET /api/get-history: 1850ms avg (8.0% error, 1200 failures)`n2. GET /api/search-content: 1450ms avg (6.7% error, 800 failures)`n3. GET /api/get-recommendations: 1150ms avg (5.0% error, 500 failures)`n4. GET /api/user-profile: 950ms avg (0.5% error, 50 failures)`n5. POST /api/post-event: 850ms avg (0.2% error, 20 failures)`n`nTop 5 Highest Error Rate:`n1. GET /api/get-history: 8.0% error (1850ms avg, 15,000 requests)`n2. GET /api/search-content: 6.7% error (1450ms avg, 12,000 requests)`n3. GET /api/get-recommendations: 5.0% error (1150ms avg, 10,000 requests)`n4. GET /api/user-profile: 0.5% error (950ms avg, 18,000 requests)`n5. POST /api/post-event: 0.2% error (850ms avg, 20,000 requests)`n`nFailure Status Codes:`n- 504 Gateway Timeout: 1800 (72%)  ← Backend database saturation`n- 503 Service Unavailable: 500 (20%)  ← Service overload`n- 500 Internal Server Error: 200 (8%)`n`nTest Progression:`n- Iteration 1: 1,000 users - ✅ PASS (250ms, 0% error, CPU 15%/18% avg/max, Mem 45%/48% avg/max)`n- Iteration 2: 5,000 users - ✅ PASS (450ms, 0.16% error, CPU 35%/42% avg/max, Mem 60%/68% avg/max)`n- Iteration 3: 10,000 users - 🔴 FAIL (1250ms, 1.67% error, CPU 75%/82% avg/max, Mem 76%/84% avg/max)`n`nRoot Cause Analysis:`n- Primary Bottleneck: Database I/O (backend timeout)`n- Evidence:`n  * CPU/Memory healthy on avg (75%/76%) but MAX hits limit (82%/84%)`n  * 504 timeouts (72%) indicate backend database saturation`n  * Slowest endpoints all DB-heavy operations (get-history: 1850ms)`n  * Response times degrade exponentially (not linearly)`n`nRecommendations:`n- Maximum safe load: 8,000 users (80% of breaking point)`n- Bottleneck Endpoint: /api/get-history (1850ms avg, 8% error) - optimize first`n- High Error Endpoint: /api/get-history (8.0% error) - fix database queries`n- Failure Root Cause: 504 Gateway Timeout (72%) indicates backend database I/O bottleneck`n- Infrastructure: MAX Memory 84% suggests increase to 6GB per pod OR scale to 30 pods`n- Application: Add database indexes on history table, implement query caching, add connection pooling"
 
 # Test complete - breaking point identified at 10,000 users
 ```
@@ -1708,7 +1708,7 @@ Comprehensive guide for analyzing Grafana (Kubernetes) and New Relic (APM) metri
 
 ```bash
 # Step 1: Analyze HTML Report to get test duration
-node inspect-data.js "D:\PerformanceAI\Reports\result.html"
+node src/utils/inspect-data.js "D:\PerformanceAI\Reports\result.html"
 # Output: duration="3 minutes" (note this value)
 
 # Step 2: Wait 1 minute after test completion for metrics to stabilize
@@ -1716,11 +1716,11 @@ Start-Sleep -Seconds 60
 
 # Step 3: Fetch Kubernetes Infrastructure Metrics (Grafana/Prometheus)
 # Use actual test duration (e.g., 3 for "3 minutes")
-node get-pod-metrics.js <service-name> <DURATION_IN_MINUTES>
+node src/metrics/get-pod-metrics.js <service-name> <DURATION_IN_MINUTES>
 
 # Step 4: Fetch Application Performance Metrics (New Relic)
 # Use actual test duration (e.g., 3 for "3 minutes")
-node get-apm-metrics.js <application-name> <DURATION_IN_MINUTES>
+node src/metrics/get-apm-metrics.js <application-name> <DURATION_IN_MINUTES>
 ```
 
 ### Metrics to Collect
@@ -2073,16 +2073,16 @@ START: Analyze test results
 **Commands**:
 ```bash
 # List jobs
-node jenkins-client.js --jenkins=jenkins-local list
+node src/clients/jenkins-client.js --jenkins=jenkins-local list
 
 # Build with parameters
-node jenkins-client.js --jenkins=jenkins-local build "Locust - Test Runner" Master_IP=10.16.7.202 Users=1000
+node src/clients/jenkins-client.js --jenkins=jenkins-local build "Locust - Test Runner" Master_IP=10.16.7.202 Users=1000
 
 # Provision EC2 infrastructure
-node jenkins-client.js --jenkins=jenkins-locust build load-test-locust-asg MIN_SIZE=31 MAX_SIZE=31 DESIRED_CAPACITY=31
+node src/clients/jenkins-client.js --jenkins=jenkins-locust build load-test-locust-asg MIN_SIZE=31 MAX_SIZE=31 DESIRED_CAPACITY=31
 
 # Check status
-node jenkins-client.js status <job-name> <build-number>
+node src/clients/jenkins-client.js status <job-name> <build-number>
 ```
 
 ---
@@ -2093,10 +2093,10 @@ node jenkins-client.js status <job-name> <build-number>
 **Commands**:
 ```bash
 # Human-readable output
-node inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" text
+node src/utils/inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" text
 
 # Machine-readable JSON
-node inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" json
+node src/utils/inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" json
 ```
 
 **Outputs**:
@@ -2114,10 +2114,10 @@ node inspect-data-enhanced.js "D:\PerformanceAI\Reports\result.html" json
 **Commands**:
 ```bash
 # Using exact timestamps (recommended)
-node get-pod-metrics-enhanced.js subscriber-event-service 1776753979 1776754339
+node src/metrics/get-pod-metrics-enhanced.js subscriber-event-service 1776753979 1776754339
 
 # Using duration in minutes (legacy)
-node get-pod-metrics-enhanced.js subscriber-event-service 5
+node src/metrics/get-pod-metrics-enhanced.js subscriber-event-service 5
 ```
 
 **Outputs**:
@@ -2135,10 +2135,10 @@ node get-pod-metrics-enhanced.js subscriber-event-service 5
 **Commands**:
 ```bash
 # Using exact timestamps with top-N (recommended)
-node get-apm-metrics-enhanced.js subscriber-event 1776753979 1776754339 5
+node src/metrics/get-apm-metrics-enhanced.js subscriber-event 1776753979 1776754339 5
 
 # Using duration in minutes
-node get-apm-metrics-enhanced.js subscriber-event 5 10
+node src/metrics/get-apm-metrics-enhanced.js subscriber-event 5 10
 ```
 
 **Outputs**:
@@ -2156,7 +2156,7 @@ node get-apm-metrics-enhanced.js subscriber-event 5 10
 **Commands**:
 ```bash
 # With all options
-node upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "<spreadsheet-id>" \
+node src/reporting/upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "<spreadsheet-id>" \
   --users 40000 \
   --rampup "4 minutes" \
   --targettps 667 \
@@ -2164,7 +2164,7 @@ node upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "<spr
   --comment "Test analysis and findings..."
 
 # Minimal usage
-node upload-with-Locust_Template.js result.html "<spreadsheet-id>" --users 1000 --rampup "1 minute"
+node src/reporting/upload-with-Locust_Template.js result.html "<spreadsheet-id>" --users 1000 --rampup "1 minute"
 ```
 
 **Features**:
@@ -2183,7 +2183,7 @@ node upload-with-Locust_Template.js result.html "<spreadsheet-id>" --users 1000 
 **Commands**:
 ```bash
 # With detailed analysis
-node send-email-report.js \
+node src/reporting/send-email-report.js \
   --to "team@example.com" \
   --cc "manager@example.com" \
   --subject "Load Test Results - 5000 Users" \
@@ -2196,7 +2196,7 @@ Key Findings:
 - Status: PASS"
 
 # Basic usage
-node send-email-report.js --to "team@example.com" --subject "Test Results" --report "result.html"
+node src/reporting/send-email-report.js --to "team@example.com" --subject "Test Results" --report "result.html"
 ```
 
 **Features**:
@@ -2216,7 +2216,7 @@ node send-email-report.js --to "team@example.com" --subject "Test Results" --rep
 **Commands**:
 ```bash
 # Analyze Reports/result.html and extract JSON
-node debug-html.js
+node src/utils/debug-html.js
 ```
 
 **Outputs**:
@@ -2233,7 +2233,7 @@ node debug-html.js
 **Commands**:
 ```bash
 # List all services from New Relic and Kubernetes
-node list-services.js
+node src/metrics/list-services.js
 ```
 
 **Outputs**:
@@ -2269,16 +2269,16 @@ node list-services.js
 **Commands**:
 ```bash
 # Read all data from first sheet (JSON format)
-node read-gsheet.js "<spreadsheet-id>"
+node src/reporting/read-gsheet.js "<spreadsheet-id>"
 
 # Read specific sheet
-node read-gsheet.js "<spreadsheet-id>" --sheet "Load Test Results"
+node src/reporting/read-gsheet.js "<spreadsheet-id>" --sheet "Load Test Results"
 
 # Read specific range
-node read-gsheet.js "<spreadsheet-id>" --sheet "Results" --range "A1:K50"
+node src/reporting/read-gsheet.js "<spreadsheet-id>" --sheet "Results" --range "A1:K50"
 
 # Output as CSV
-node read-gsheet.js "<spreadsheet-id>" --format csv
+node src/reporting/read-gsheet.js "<spreadsheet-id>" --format csv
 ```
 
 ---
@@ -2291,7 +2291,7 @@ node read-gsheet.js "<spreadsheet-id>" --format csv
 **Commands**:
 ```bash
 # Simple upload (positional arguments only)
-node upload-results-clean.js "D:\PerformanceAI\Reports\result.html" "<spreadsheet-id>"
+node src/reporting/upload-results-clean.js "D:\PerformanceAI\Reports\result.html" "<spreadsheet-id>"
 ```
 
 **Use Case**: Quick exports without formatting needs
@@ -2303,7 +2303,7 @@ node upload-results-clean.js "D:\PerformanceAI\Reports\result.html" "<spreadshee
 
 **Commands**:
 ```bash
-node upload-with-template.js result.html "<spreadsheet-id>" \
+node src/reporting/upload-with-template.js result.html "<spreadsheet-id>" \
   --users 50000 \
   --rampup "1 minute" \
   --comment "Load test analysis"
@@ -2318,7 +2318,7 @@ node upload-with-template.js result.html "<spreadsheet-id>" \
 
 **Commands**:
 ```bash
-node locust-to-gsheet.js result.html "<spreadsheet-id>" \
+node src/reporting/locust-to-gsheet.js result.html "<spreadsheet-id>" \
   --users 50000 \
   --tps 833 \
   --rampup "1 minute"
@@ -2333,7 +2333,7 @@ node locust-to-gsheet.js result.html "<spreadsheet-id>" \
 
 **Commands**:
 ```bash
-node get-pod-metrics.js subscriber-event-service 5
+node src/metrics/get-pod-metrics.js subscriber-event-service 5
 ```
 
 **Limitation**: Shows current/average only, not MAX values
@@ -2346,7 +2346,7 @@ node get-pod-metrics.js subscriber-event-service 5
 
 **Commands**:
 ```bash
-node get-apm-metrics.js subscriber-event 5
+node src/metrics/get-apm-metrics.js subscriber-event 5
 ```
 
 **Limitation**: No top-N sorting, no exact timestamps
@@ -2359,7 +2359,7 @@ node get-apm-metrics.js subscriber-event 5
 
 **Commands**:
 ```bash
-node inspect-data.js "D:\PerformanceAI\Reports\result.html"
+node src/utils/inspect-data.js "D:\PerformanceAI\Reports\result.html"
 ```
 
 **Limitation**: No exact timestamps, no status code breakdown
@@ -2375,14 +2375,14 @@ node inspect-data.js "D:\PerformanceAI\Reports\result.html"
 **Commands**:
 ```bash
 # Health check
-node grafana-reader.js health
+node src/clients/grafana-reader.js health
 
 # List dashboards
-node grafana-reader.js dashboards
+node src/clients/grafana-reader.js dashboards
 
 # Prometheus queries
-node grafana-reader.js query "up"
-node grafana-reader.js label-values namespace
+node src/clients/grafana-reader.js query "up"
+node src/clients/grafana-reader.js label-values namespace
 ```
 
 ---
@@ -2393,16 +2393,16 @@ node grafana-reader.js label-values namespace
 **Commands**:
 ```bash
 # Account details
-node newrelic-client.js account
+node src/clients/newrelic-client.js account
 
 # List APM applications
-node newrelic-client.js apps
+node src/clients/newrelic-client.js apps
 
 # NRQL queries
-node newrelic-client.js nrql "SELECT count(*) FROM Transaction SINCE 1 hour ago"
+node src/clients/newrelic-client.js nrql "SELECT count(*) FROM Transaction SINCE 1 hour ago"
 
 # Search entities
-node newrelic-client.js search "name LIKE '%prod%'"
+node src/clients/newrelic-client.js search "name LIKE '%prod%'"
 ```
 
 ---
