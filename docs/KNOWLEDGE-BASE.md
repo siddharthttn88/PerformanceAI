@@ -191,7 +191,8 @@ Use the legacy template if you need the original 3-column summary format without
 
 ### Rules (Both Templates)
 - **Leave 6 blank lines** beneath previous test results before appending new results
-- **TPS Calculation**: TPS = Users / 60 (for 1-minute ramp-up)
+- **TPS Calculation for Display**: TPS = Users * 0.017 (for Google Sheets and Email reports)
+- **Jenkins RampUp Calculation**: RampUp = Users / (Ramp-up time in seconds) - This is the actual rate sent to Jenkins
 - **Test Time**: Always extracted from `result.html` (auto-detected by script)
   - Script automatically parses test timestamps from HTML report
   - Timezone conversion: UTC → IST (GMT+5:30) or local timezone
@@ -208,11 +209,11 @@ Use the legacy template if you need the original 3-column summary format without
 
 ### Example (Locust Template - Recommended)
 ```bash
-node upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 40000 --rampup "4 minutes" --targettps 667 --timezone "local" --comment "Load Test Analysis - 40K Users Breaking Point Test
+node upload-with-Locust_Template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw" --users 40000 --rampup "4 minutes" --targettps 680 --timezone "local" --comment "Load Test Analysis - 40K Users Breaking Point Test
 
 Test Configuration:
 - User Load: 40,000 concurrent users
-- Target TPS: 667 | Actual TPS: 3,607
+- Target TPS: 680 (users * 0.017) | Jenkins RampUp: 167 users/sec
 - Ramp-up: 4 minutes
 - Duration: 7 minutes 1 second
 
@@ -245,7 +246,10 @@ node upload-with-template.js "D:\PerformanceAI\Reports\result.html" "1ngmUfc0QsO
 - `<SPREADSHEET_ID>`: Google Sheet ID from the URL
 - `--users <count>`: Actual user count used in the test (required)
 - `--rampup <time>`: Ramp-up time (e.g., "1 minute", "4 minutes")
-- `--targettps <tps>`: Target TPS for display (optional, defaults to users/60)
+- `--targettps <tps>`: Target TPS for display (optional, defaults to users * 0.017)
+  - **Display Formula**: TPS = Users * 0.017 (used for reporting in sheets/email)
+  - **Jenkins Formula**: RampUp = Users / (Ramp-up time in seconds) - actual rate sent to Jenkins
+  - Example: 60,000 users → Display TPS = 1,020, Jenkins RampUp = 200 users/sec (for 5min rampup)
 - `--sheet <name>`: Sheet name (optional, uses first sheet if not specified)
 - `--comment <text>`: Multi-line comment with test details (use `\n` for line breaks)
 - `--timezone <tz>`: Timezone for timestamps - "IST" or "local" (default: local)
