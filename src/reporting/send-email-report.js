@@ -4,7 +4,9 @@
  * Send Email Report - Load Test Results Mailer
  * 
  * Sends load test report and analysis via email with HTML formatting
- * Supports attachments (HTML reports, screenshots, metrics files)
+ * Supports attachments (PDF reports, screenshots, metrics files)
+ * Note: --report is used only for metric extraction, NOT attached to the email.
+ *       Use --attach to explicitly add files (e.g. PDF converted from the HTML report).
  * 
  * Usage:
  *   node send-email-report.js --to "email@example.com" --subject "Load Test Report" --report "result.html" [options]
@@ -1177,15 +1179,7 @@ async function sendEmail(config, args, summary) {
         // Prepare attachments
         const attachments = [];
 
-        // Add HTML report
-        if (args.report && fs.existsSync(args.report)) {
-            attachments.push({
-                filename: path.basename(args.report),
-                path: args.report
-            });
-        }
-
-        // Add additional attachments
+        // Add explicit attachments only (HTML report is used for metric extraction only, not attached)
         for (const attachPath of args.attach) {
             if (fs.existsSync(attachPath)) {
                 attachments.push({
