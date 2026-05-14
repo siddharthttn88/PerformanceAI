@@ -9,9 +9,9 @@
         "progression": "10000",
         "rampupProgression": "1min",
         "durationProgression": "2min",
-        "service": "subscriber-event",
-        "sheet": "Subscriber_01-05-26",
-        "link": "https://docs.google.com/spreadsheets/d/1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw/edit?pli=1&gid=1199840407#gid=1199840407"
+        "service": "content-detail",
+        "sheet": "Content_14-05-26",
+        "link": "https://docs.google.com/spreadsheets/d/1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw/edit?gid=686619270#gid=686619270"
       },
       "description": "A breakpoint test is a type of performance test where the load is gradually increased until the system breaks or reaches its maximum capacity. This helps identify the breaking point of the system and understand how it behaves under stress. If the parameters are not given by user for first iteration then them for input."
     },

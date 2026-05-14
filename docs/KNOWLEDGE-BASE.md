@@ -321,7 +321,57 @@ node src/reporting/read-gsheet.js 1ngmUfc0QsOsDnvZkr6K-PtgUFN3mUN_ShxaKmkwi7nw -
 
 ---
 
-## 2a. Send Load Test Report via Email
+## 2a. Convert HTML Report to PDF
+
+### Overview
+Convert the Locust HTML result report to PDF before emailing. This preserves all formatting, charts, tables, and color-coded metrics exactly as they appear in the browser. PDF attachments are also less likely to be blocked by corporate email filters than raw HTML files.
+
+**Requires:** `puppeteer-core` npm package (uses system Edge/Chrome — no Chromium download)
+```bash
+npm install puppeteer-core
+```
+
+### Command
+```bash
+node src/utils/html-to-pdf.js "<PATH_TO_RESULT_HTML>" [output.pdf] [options]
+```
+
+### Options
+- `--format <size>` - Page format: A4 (default), A3, Letter, Legal
+- `--landscape` - Landscape orientation (default: portrait)
+- `--margin <px>` - Page margin in pixels (default: 20)
+- `--scale <factor>` - Zoom scale 0.1–2.0 (default: 1)
+- `--no-background` - Skip background colors and images
+- `--wait <ms>` - Extra wait for JS/charts to render (default: 1000ms)
+
+### Examples
+```bash
+# Basic — output PDF alongside HTML (same filename)
+node src/utils/html-to-pdf.js "D:\PerformanceAI\Reports\result.html"
+
+# Specify output path
+node src/utils/html-to-pdf.js "D:\PerformanceAI\Reports\result.html" "D:\PerformanceAI\Reports\result.pdf"
+
+# Scale down slightly to fit more content per page
+node src/utils/html-to-pdf.js "D:\PerformanceAI\Reports\result.html" --scale 0.8
+
+# Landscape for wide endpoint tables
+node src/utils/html-to-pdf.js "D:\PerformanceAI\Reports\result.html" --landscape
+
+# A3 format with extra render wait for slow charts
+node src/utils/html-to-pdf.js "D:\PerformanceAI\Reports\result.html" --format A3 --wait 3000
+```
+
+### Notes
+- Uses Microsoft Edge (or Chrome) headless — no extra browser installation needed
+- `networkidle0` wait ensures all charts and dynamic content fully render before capture
+- `printBackground: true` preserves all background colors, status badges, gradients
+- `displayHeaderFooter: false` removes URL/page-number clutter
+- Output defaults to same directory and name as the input HTML
+
+---
+
+## 2b. Send Load Test Report via Email
 
 ### Overview
 Send load test reports and analysis via email with HTML formatting and attachments. Supports automatic test summary extraction and customizable email templates.
@@ -640,15 +690,23 @@ The script automatically extracts and displays:
 
 After **Step 5: Upload to Google Sheet**, add:
 
-**Step 6: Send Email Report**
+**Step 5.5: Convert HTML Report to PDF** ⭐ (do this before emailing)
+```bash
+node src/utils/html-to-pdf.js "D:\PerformanceAI\Reports\result.html" "D:\PerformanceAI\Reports\result.pdf"
+```
+
+**Step 6: Send Email Report (with PDF attachment)**
 ```bash
 node src/reporting/send-email-report.js \
   --to "performance-team@example.com" \
   --cc "dev-managers@example.com" \
   --subject "Load Test Results - <SERVICE_NAME> - <USER_COUNT> Users" \
   --report "D:\PerformanceAI\Reports\result.html" \
+  --attach "D:\PerformanceAI\Reports\result.pdf" \
   --body "<PREPARED_COMMENT_FROM_STEP_4>"
 ```
+
+> **Note:** The `--report` flag is still required for auto-extracting test metrics (requests, failures, response times, PASS/FAIL status). The `--attach` flag adds the PDF as the downloadable attachment instead of the HTML file.
 
 **Example Integrated Workflow:**
 ```bash
@@ -658,12 +716,16 @@ node src/reporting/upload-with-Locust_Template.js "D:\PerformanceAI\Reports\resu
   --users 5000 --rampup "1 minute" --targettps 83 \
   --comment "Test completed successfully..."
 
-# Step 6: Send Email Report
+# Step 5.5: Convert HTML report to PDF
+node src/utils/html-to-pdf.js "D:\PerformanceAI\Reports\result.html" "D:\PerformanceAI\Reports\result.pdf"
+
+# Step 6: Send Email Report with PDF attachment
 node src/reporting/send-email-report.js \
   --to "team@example.com" \
   --cc "manager@example.com" \
   --subject "Load Test Results - subscriber-event-service - 5000 Users" \
   --report "D:\PerformanceAI\Reports\result.html" \
+  --attach "D:\PerformanceAI\Reports\result.pdf" \
   --body "Subscriber Event Service Load Test - 5000 Users
 
 Test Results: ✅ PASS
@@ -683,12 +745,13 @@ Next Steps: Proceed to 10K user test."
 ```
 
 ### Notes
+- Always convert HTML to PDF before emailing — PDF attachments are more compatible with corporate email filters than raw HTML
+- The `--report` flag is still required for metric auto-extraction; use `--attach` to send the PDF
 - Email configuration must be added to `config/config.json` before first use
 - For Gmail, use App Password (not regular password)
 - SMTP credentials are stored securely in config/config.json (excluded from git)
 - Failed authentication shows helpful error messages
 - Supports both Gmail, Outlook, and custom SMTP servers
-- Attachments are automatically linked to email
 - HTML template ensures professional presentation
 - Email sent confirmation includes message ID
 
@@ -2177,17 +2240,52 @@ node src/reporting/upload-with-Locust_Template.js result.html "<spreadsheet-id>"
 
 ---
 
-#### 6. **send-email-report.js** - Email Reports
-**Purpose**: Send load test reports via email with professional HTML formatting
+#### 6. **html-to-pdf.js** - HTML to PDF Converter ⭐ (Run before emailing)
+**Purpose**: Convert Locust HTML report to PDF using headless Edge/Chrome via Puppeteer — preserves all formatting, charts, and colors exactly
 
 **Commands**:
 ```bash
-# With detailed analysis
+# Default — output PDF to same directory as HTML
+node src/utils/html-to-pdf.js "D:\PerformanceAI\Reports\result.html"
+
+# Specify output path
+node src/utils/html-to-pdf.js "D:\PerformanceAI\Reports\result.html" "D:\PerformanceAI\Reports\result.pdf"
+
+# Scale down for wider tables
+node src/utils/html-to-pdf.js "D:\PerformanceAI\Reports\result.html" --scale 0.8
+
+# Landscape orientation
+node src/utils/html-to-pdf.js "D:\PerformanceAI\Reports\result.html" --landscape
+
+# Extra wait for charts to render
+node src/utils/html-to-pdf.js "D:\PerformanceAI\Reports\result.html" --wait 3000
+```
+
+**Requires**: `puppeteer-core` (`npm install puppeteer-core`) + Microsoft Edge or Chrome installed
+
+**Options**:
+- `--format` A4 (default), A3, Letter, Legal
+- `--landscape` Landscape mode
+- `--scale` Zoom factor 0.1–2.0 (default: 1)
+- `--margin` Page margin in px (default: 20)
+- `--wait` Extra render wait in ms (default: 1000)
+- `--no-background` Skip background colors
+
+---
+
+#### 7. **send-email-report.js** - Email Reports
+**Purpose**: Send load test reports via email with professional HTML formatting and PDF attachment
+
+**Commands**:
+```bash
+# Recommended: convert to PDF first, then send with PDF attached
+node src/utils/html-to-pdf.js "D:\PerformanceAI\Reports\result.html" "D:\PerformanceAI\Reports\result.pdf"
 node src/reporting/send-email-report.js \
   --to "team@example.com" \
   --cc "manager@example.com" \
   --subject "Load Test Results - 5000 Users" \
   --report "D:\PerformanceAI\Reports\result.html" \
+  --attach "D:\PerformanceAI\Reports\result.pdf" \
   --body "Test completed successfully...
 
 Key Findings:
@@ -2195,7 +2293,7 @@ Key Findings:
 - Throughput: 83 RPS
 - Status: PASS"
 
-# Basic usage
+# Basic usage (HTML attachment only)
 node src/reporting/send-email-report.js --to "team@example.com" --subject "Test Results" --report "result.html"
 ```
 
@@ -2205,6 +2303,7 @@ node src/reporting/send-email-report.js --to "team@example.com" --subject "Test 
 - ✅ Multiple recipients and CC support
 - ✅ Gmail, Outlook, custom SMTP support
 - ✅ SLA-based PASS/FAIL status
+- ✅ PDF attachment support via `--attach` flag
 
 ---
 
@@ -2461,7 +2560,8 @@ node src/clients/newrelic-client.js search "name LIKE '%prod%'"
 5. Get pod metrics: `get-pod-metrics-enhanced.js` ⭐ (ENHANCED)
 6. Get APM metrics: `get-apm-metrics-enhanced.js` ⭐ (ENHANCED)
 7. Upload to sheet: `upload-with-Locust_Template.js` ⭐ (RECOMMENDED)
-8. Send email: `send-email-report.js`
+8. Convert to PDF: `html-to-pdf.js` ⭐ (before emailing)
+9. Send email: `send-email-report.js` (attach PDF via `--attach`)
 
 **For Debugging:**
 - Debug HTML extraction: `debug-html.js`
